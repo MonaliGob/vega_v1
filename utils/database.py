@@ -201,6 +201,7 @@ class DatabaseConnector:
         rule = Rule(
             name=rule_data["name"],
             description=rule_data["description"],
+            folder=rule_data.get("folder", "/"),
             database=rule_data["database"],
             table=rule_data["table"],
             type=rule_data["type"],
@@ -218,6 +219,7 @@ class DatabaseConnector:
         if rule:
             rule.name = rule_data["name"]
             rule.description = rule_data["description"]
+            rule.folder = rule_data.get("folder", "/")
             rule.database = rule_data["database"]
             rule.table = rule_data["table"]
             rule.type = rule_data["type"]

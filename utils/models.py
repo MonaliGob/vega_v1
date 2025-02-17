@@ -47,6 +47,7 @@ class Rule(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     description = Column(String)
+    folder = Column(String, default="/")  # Root folder by default
     database = Column(String)
     table = Column(String)
     type = Column(String)
