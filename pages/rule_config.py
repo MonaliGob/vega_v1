@@ -1,7 +1,9 @@
 import streamlit as st
 from utils.database import DatabaseConnector
+from utils.auth import require_auth
 import json
 
+@require_auth
 def app():
     st.title("Rule Configuration")
 

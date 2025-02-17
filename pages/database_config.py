@@ -1,7 +1,9 @@
 import streamlit as st
 from utils.database import DatabaseConnector
+from utils.auth import require_auth
 import json
 
+@require_auth
 def app():
     st.title("Database Connection Management")
 
@@ -108,7 +110,7 @@ def app():
                     "username": username,
                     "ssl_mode": ssl_mode
                 }
-                
+
                 if password:  # Only update password if provided
                     connection_config["password"] = password
 
@@ -134,7 +136,7 @@ def app():
 
     # Display Existing Connections
     st.header("Existing Connections")
-    
+
     for conn in connections:
         with st.container():
             col1, col2, col3 = st.columns([4, 1, 1])

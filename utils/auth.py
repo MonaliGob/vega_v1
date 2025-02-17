@@ -2,12 +2,14 @@ import streamlit as st
 import hashlib
 
 def check_password():
-    if "password_correct" not in st.session_state:
-        st.session_state["password_correct"] = False
+    """Check if the user is logged in or authenticate them."""
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
 
-    if st.session_state["password_correct"]:
+    if st.session_state.authenticated:
         return True
 
+    # Display login form
     col1, col2 = st.columns([1, 2])
     with col1:
         st.image("attached_assets/image_1739823857967.png", width=150)
@@ -36,11 +38,19 @@ def check_password():
                 username.lower() == "admin" and
                 password == "admin"
             ):
-                st.session_state["password_correct"] = True
-                st.switch_page("pages/execute_rules.py")
+                st.session_state.authenticated = True
+                st.rerun()
                 return True
             else:
                 st.error("😕 Invalid username or password")
                 return False
 
     return False
+
+def require_auth(func):
+    """Decorator to require authentication for pages."""
+    def wrapper():
+        if not check_password():
+            st.stop()
+        return func()
+    return wrapper

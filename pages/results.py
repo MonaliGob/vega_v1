@@ -2,9 +2,11 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 from utils.database import DatabaseConnector
+from utils.auth import require_auth
 import pandas as pd
 import numpy as np
 
+@require_auth
 def app():
     st.set_page_config(
         page_title="VEGA - Results",

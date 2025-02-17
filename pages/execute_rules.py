@@ -1,9 +1,11 @@
 import streamlit as st
 from utils.database import DatabaseConnector
 from utils.data_quality import DataQualityChecker
+from utils.auth import require_auth
 import pandas as pd
 import plotly.express as px
 
+@require_auth
 def app():
     st.title("Rule Execution")
 
