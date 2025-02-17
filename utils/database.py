@@ -2,7 +2,7 @@ import pandas as pd
 from typing import Dict, List, Optional
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
-from .models import get_db, Rule, Result
+from .models import get_db, Rule, Result, engine
 import os
 import psycopg2
 from psycopg2 import sql
@@ -10,14 +10,10 @@ from psycopg2 import sql
 class DatabaseConnector:
     def __init__(self):
         self.db = next(get_db())
-        db_url = os.getenv('DATABASE_URL')
-        self.engine = create_engine(
-            db_url,
-            connect_args={
-                'sslmode': 'require',
-                'connect_timeout': 30
-            }
-        )
+        # Use the same engine from models.py
+        self.engine = engine
+
+        # Connection settings for direct psycopg2 connections
         self.connections = {
             "postgres": {
                 "host": os.getenv('PGHOST'),
@@ -25,7 +21,12 @@ class DatabaseConnector:
                 "user": os.getenv('PGUSER'),
                 "password": os.getenv('PGPASSWORD'),
                 "database": os.getenv('PGDATABASE'),
-                "sslmode": "require"
+                "sslmode": "require",
+                "connect_timeout": 30,
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 5
             }
         }
 
@@ -105,11 +106,13 @@ class DatabaseConnector:
     def _ensure_sample_table_exists(self):
         try:
             with self.engine.connect() as conn:
+                # Check if table exists
                 result = conn.execute(text(
                     "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'sample_table')"
                 )).scalar()
 
                 if not result:
+                    # Create and populate sample table
                     conn.execute(text("""
                         CREATE TABLE IF NOT EXISTS sample_table (
                             id SERIAL PRIMARY KEY,
@@ -128,6 +131,7 @@ class DatabaseConnector:
                         FROM generate_series(1, 1000)
                     """))
                     conn.commit()
+                    print("Sample table created and populated successfully")
         except Exception as e:
             print(f"Error ensuring sample table exists: {str(e)}")
 
