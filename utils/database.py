@@ -2,67 +2,180 @@ import pandas as pd
 from typing import Dict, List, Optional
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
-from .models import get_db, Rule, Result, engine
+from .models import get_db, Rule, Result, DatabaseConnection, engine
 import os
 import psycopg2
 from psycopg2 import sql
+from datetime import datetime
 
 class DatabaseConnector:
     def __init__(self):
         self.db = next(get_db())
-        # Use the same engine from models.py
         self.engine = engine
 
-        # Connection settings for direct psycopg2 connections
-        self.connections = {
-            "postgres": {
-                "host": os.getenv('PGHOST'),
-                "port": os.getenv('PGPORT'),
-                "user": os.getenv('PGUSER'),
-                "password": os.getenv('PGPASSWORD'),
-                "database": os.getenv('PGDATABASE'),
-                "sslmode": "require",
-                "connect_timeout": 30,
-                "keepalives": 1,
-                "keepalives_idle": 30,
-                "keepalives_interval": 10,
-                "keepalives_count": 5
-            }
-        }
+    def get_database_connections(self) -> List[DatabaseConnection]:
+        """Get all database connections"""
+        return self.db.query(DatabaseConnection).all()
 
-    def get_available_connections(self) -> List[str]:
-        return list(self.connections.keys())
+    def save_database_connection(self, connection_data: Dict) -> bool:
+        """Save a new database connection"""
+        try:
+            connection = DatabaseConnection(
+                name=connection_data["name"],
+                description=connection_data.get("description", ""),
+                connection_type=connection_data["connection_type"],
+                host=connection_data["host"],
+                port=connection_data["port"],
+                database=connection_data["database"],
+                username=connection_data["username"],
+                password=connection_data.get("password", ""),
+                ssl_mode=connection_data.get("ssl_mode", "require"),
+                is_active=True
+            )
+            self.db.add(connection)
+            self.db.commit()
+            self.db.refresh(connection)
+            return True
+        except Exception as e:
+            print(f"Error saving database connection: {str(e)}")
+            return False
 
-    def get_available_tables(self, conn_type: str) -> List[str]:
-        if conn_type == "postgres":
-            try:
-                conn = psycopg2.connect(**self.connections[conn_type])
+    def update_database_connection(self, connection_data: Dict) -> bool:
+        """Update an existing database connection"""
+        try:
+            connection = self.db.query(DatabaseConnection).filter(
+                DatabaseConnection.id == connection_data["id"]
+            ).first()
+
+            if connection:
+                connection.name = connection_data["name"]
+                connection.description = connection_data.get("description", "")
+                connection.connection_type = connection_data["connection_type"]
+                connection.host = connection_data["host"]
+                connection.port = connection_data["port"]
+                connection.database = connection_data["database"]
+                connection.username = connection_data["username"]
+                if "password" in connection_data:
+                    connection.password = connection_data["password"]
+                connection.ssl_mode = connection_data.get("ssl_mode", "require")
+
+                self.db.commit()
+                self.db.refresh(connection)
+                return True
+            return False
+        except Exception as e:
+            print(f"Error updating database connection: {str(e)}")
+            return False
+
+    def test_connection(self, connection_data: Dict) -> bool:
+        """Test a database connection"""
+        try:
+            # If ID is provided, get connection details from database
+            if "id" in connection_data:
+                connection = self.db.query(DatabaseConnection).filter(
+                    DatabaseConnection.id == connection_data["id"]
+                ).first()
+                if not connection:
+                    return False
+                connection_data = {
+                    "connection_type": connection.connection_type,
+                    "host": connection.host,
+                    "port": connection.port,
+                    "database": connection.database,
+                    "username": connection.username,
+                    "password": connection.password,
+                    "ssl_mode": connection.ssl_mode
+                }
+
+            # Create connection string based on database type
+            if connection_data["connection_type"] == "postgresql":
+                conn_str = (
+                    f"postgresql://{connection_data['username']}:{connection_data['password']}"
+                    f"@{connection_data['host']}:{connection_data['port']}"
+                    f"/{connection_data['database']}"
+                )
+
+                # Create test engine
+                test_engine = create_engine(
+                    conn_str,
+                    connect_args={
+                        'sslmode': connection_data.get('ssl_mode', 'require'),
+                        'connect_timeout': 10
+                    }
+                )
+
+                # Test connection
+                with test_engine.connect() as conn:
+                    conn.execute(text("SELECT 1"))
+
+                # Update last_connected_at if this is an existing connection
+                if "id" in connection_data:
+                    connection.last_connected_at = datetime.utcnow()
+                    self.db.commit()
+
+                return True
+
+            return False
+        except Exception as e:
+            print(f"Connection test failed: {str(e)}")
+            return False
+
+    def get_available_tables(self, connection_id: int) -> List[str]:
+        """Get available tables for a specific database connection"""
+        try:
+            connection = self.db.query(DatabaseConnection).filter(
+                DatabaseConnection.id == connection_id
+            ).first()
+
+            if not connection:
+                return []
+
+            if connection.connection_type == "postgresql":
+                conn = psycopg2.connect(
+                    host=connection.host,
+                    port=connection.port,
+                    database=connection.database,
+                    user=connection.username,
+                    password=connection.password,
+                    sslmode=connection.ssl_mode
+                )
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT table_name 
                     FROM information_schema.tables 
                     WHERE table_schema = 'public'
                     AND table_type = 'BASE TABLE'
-                    AND table_name != 'rules'
-                    AND table_name != 'results'
                     ORDER BY table_name;
                 """)
                 tables = [row[0] for row in cursor.fetchall()]
                 cursor.close()
                 conn.close()
                 return tables
-            except Exception as e:
-                print(f"Error getting tables: {str(e)}")
-                return []
-        return []
 
-    def get_column_names(self, conn_type: str, table_name: str) -> List[str]:
-        if not table_name:
+            return []
+        except Exception as e:
+            print(f"Error getting tables: {str(e)}")
             return []
 
-        if conn_type == "postgres":
-            try:
-                conn = psycopg2.connect(**self.connections[conn_type])
+    def get_column_names(self, connection_id: int, table_name: str) -> List[str]:
+        """Get column names for a specific table in a database connection"""
+        try:
+            connection = self.db.query(DatabaseConnection).filter(
+                DatabaseConnection.id == connection_id
+            ).first()
+
+            if not connection:
+                return []
+
+            if connection.connection_type == "postgresql":
+                conn = psycopg2.connect(
+                    host=connection.host,
+                    port=connection.port,
+                    database=connection.database,
+                    user=connection.username,
+                    password=connection.password,
+                    sslmode=connection.ssl_mode
+                )
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT column_name 
@@ -75,10 +188,62 @@ class DatabaseConnector:
                 cursor.close()
                 conn.close()
                 return columns
-            except Exception as e:
-                print(f"Error getting columns for {table_name}: {str(e)}")
-                return []
-        return []
+
+            return []
+        except Exception as e:
+            print(f"Error getting columns: {str(e)}")
+            return []
+
+    def get_rules(self) -> List[Rule]:
+        return self.db.query(Rule).all()
+
+    def save_rule(self, rule_data: Dict) -> Rule:
+        rule = Rule(
+            name=rule_data["name"],
+            description=rule_data["description"],
+            connection_id=rule_data.get("connection_id"),
+            database=rule_data["database"],
+            table=rule_data["table"],
+            type=rule_data["type"],
+            column=rule_data["column"],
+            threshold=rule_data["threshold"],
+            parameters=rule_data.get("parameters", {})
+        )
+        self.db.add(rule)
+        self.db.commit()
+        self.db.refresh(rule)
+        return rule
+
+    def update_rule(self, rule_data: Dict) -> Rule:
+        rule = self.db.query(Rule).filter(Rule.id == rule_data["id"]).first()
+        if rule:
+            rule.name = rule_data["name"]
+            rule.description = rule_data["description"]
+            rule.connection_id = rule_data.get("connection_id")
+            rule.database = rule_data["database"]
+            rule.table = rule_data["table"]
+            rule.type = rule_data["type"]
+            rule.column = rule_data["column"]
+            rule.threshold = rule_data["threshold"]
+            rule.parameters = rule_data.get("parameters", {})
+            self.db.commit()
+            self.db.refresh(rule)
+        return rule
+
+    def get_results(self) -> List[Result]:
+        return self.db.query(Result).all()
+
+    def save_result(self, result_data: Dict) -> Result:
+        result = Result(
+            rule_id=int(result_data["rule_id"]),
+            status=str(result_data["status"]),
+            score=float(result_data["score"]),
+            error=str(result_data["error"]) if result_data.get("error") else None
+        )
+        self.db.add(result)
+        self.db.commit()
+        self.db.refresh(result)
+        return result
 
     def get_sample_data(self, conn_type: str, query: str, limit: int = 100) -> pd.DataFrame:
         try:
@@ -134,52 +299,3 @@ class DatabaseConnector:
                     print("Sample table created and populated successfully")
         except Exception as e:
             print(f"Error ensuring sample table exists: {str(e)}")
-
-    def save_rule(self, rule_data: Dict) -> Rule:
-        rule = Rule(
-            name=rule_data["name"],
-            description=rule_data["description"],
-            database=rule_data["database"],
-            table=rule_data["table"],
-            type=rule_data["type"],
-            column=rule_data["column"],
-            threshold=rule_data["threshold"],
-            parameters=rule_data.get("parameters", {})
-        )
-        self.db.add(rule)
-        self.db.commit()
-        self.db.refresh(rule)
-        return rule
-
-    def update_rule(self, rule_data: Dict) -> Rule:
-        rule = self.db.query(Rule).filter(Rule.id == rule_data["id"]).first()
-        if rule:
-            rule.name = rule_data["name"]
-            rule.description = rule_data["description"]
-            rule.database = rule_data["database"]
-            rule.table = rule_data["table"]
-            rule.type = rule_data["type"]
-            rule.column = rule_data["column"]
-            rule.threshold = rule_data["threshold"]
-            rule.parameters = rule_data.get("parameters", {})
-            self.db.commit()
-            self.db.refresh(rule)
-        return rule
-
-    def get_rules(self) -> List[Rule]:
-        return self.db.query(Rule).all()
-
-    def save_result(self, result_data: Dict) -> Result:
-        result = Result(
-            rule_id=int(result_data["rule_id"]),
-            status=str(result_data["status"]),
-            score=float(result_data["score"]),
-            error=str(result_data["error"]) if result_data.get("error") else None
-        )
-        self.db.add(result)
-        self.db.commit()
-        self.db.refresh(result)
-        return result
-
-    def get_results(self) -> List[Result]:
-        return self.db.query(Result).all()

@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, JSON
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, JSON, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
@@ -24,12 +24,30 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
+class DatabaseConnection(Base):
+    __tablename__ = "database_connections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    description = Column(String)
+    connection_type = Column(String)  # postgresql, mysql, etc.
+    host = Column(String)
+    port = Column(Integer)
+    database = Column(String)
+    username = Column(String)
+    password = Column(String)
+    ssl_mode = Column(String, default='require')
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_connected_at = Column(DateTime, nullable=True)
+
 class Rule(Base):
     __tablename__ = "rules"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     description = Column(String)
+    connection_id = Column(Integer)  # Reference to DatabaseConnection
     database = Column(String)
     table = Column(String)
     type = Column(String)

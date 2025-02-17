@@ -1,4 +1,3 @@
-# initial commit
 import streamlit as st
 from utils.auth import check_password
 
@@ -121,6 +120,7 @@ def main():
                 </div>
                 <div class="material-nav-links">
                     <a href="/" class="material-nav-link">📊 Main</a>
+                    <a href="/pages/database_config" class="material-nav-link">🔌 Databases</a>
                     <a href="/pages/execute_rules" class="material-nav-link">🎯 Execute Rules</a>
                     <a href="/pages/rule_config" class="material-nav-link">⚙️ Rules</a>
                     <a href="/pages/results" class="material-nav-link">📈 Results</a>
@@ -140,6 +140,7 @@ def main():
             <p>
             Welcome to VEGA - Your Enterprise Data Quality Guardian. This platform allows you to:
             <ul>
+                <li>Connect to multiple databases</li>
                 <li>Configure data quality rules</li>
                 <li>Monitor data quality metrics</li>
                 <li>Visualize results and trends</li>
