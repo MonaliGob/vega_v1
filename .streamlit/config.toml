@@ -1,0 +1,13 @@
+[server]
+headless = true
+address = "0.0.0.0"
+port = 5000
+
+[theme]
+# PowerBI-inspired dark theme
+base = "dark"
+primaryColor = "#0078D4"  # PowerBI blue
+backgroundColor = "#1B1B1B"  # Dark background
+secondaryBackgroundColor = "#252525"  # Card background
+textColor = "#FFFFFF"  # White text
+font = "sans serif"
