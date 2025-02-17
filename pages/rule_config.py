@@ -58,12 +58,12 @@ def app():
         with col1:
             db_type = st.selectbox(
                 "Database Type",
-                db_connector.get_available_connections(),
-                index=0 if not default_db_type else db_connector.get_available_connections().index(default_db_type)
+                ["postgresql"],  # Simplified for now
+                index=0
             )
 
         # Get available tables
-        available_tables = db_connector.get_available_tables(db_type)
+        available_tables = db_connector.get_available_tables(1)  # Using default connection
 
         with col2:
             table_name = st.selectbox(
@@ -75,7 +75,7 @@ def app():
         # Get columns for selected table
         available_columns = []
         if table_name:
-            available_columns = db_connector.get_column_names(db_type, table_name)
+            available_columns = db_connector.get_column_names(1, table_name)  # Using default connection
 
         # Rule Type and Parameters
         rule_type = st.selectbox(
@@ -130,25 +130,23 @@ def app():
                     rule_config["id"] = rule_id
                     db_connector.update_rule(rule_config)
                     st.success("Rule updated successfully!")
-                    st.session_state.editing_rule = None  # Clear editing state
-                    st.session_state.form_key += 1  # Update form key to reset the form
+                    st.session_state.editing_rule = None
+                    st.session_state.form_key += 1
                 else:
-                    # Save new rule to database
                     db_connector.save_rule(rule_config)
                     st.success("Rule created successfully!")
-                    st.session_state.form_key += 1  # Update form key to reset the form
+                    st.session_state.form_key += 1
 
     # Cancel editing button
     if editing_rule:
         if st.button("Cancel Editing"):
             st.session_state.editing_rule = None
-            st.session_state.form_key += 1  # Update form key to reset the form
+            st.session_state.form_key += 1
             st.experimental_rerun()
 
     # Display Existing Rules
     st.header("Existing Rules")
 
-    # Create columns for the rules display
     for rule in rules:
         with st.container():
             col1, col2 = st.columns([5, 1])
@@ -167,10 +165,9 @@ def app():
                     })
 
             with col2:
-                # Use a unique key for each edit button
                 if st.button("Edit", key=f"edit_{rule.id}_{st.session_state.form_key}"):
                     st.session_state.editing_rule = rule
-                    st.session_state.form_key += 1  # Update form key to reset the form
+                    st.session_state.form_key += 1
                     st.experimental_rerun()
 
 if __name__ == "__main__":

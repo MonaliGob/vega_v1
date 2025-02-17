@@ -47,7 +47,6 @@ class Rule(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     description = Column(String)
-    connection_id = Column(Integer)  # Reference to DatabaseConnection
     database = Column(String)
     table = Column(String)
     type = Column(String)
