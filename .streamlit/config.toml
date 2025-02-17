@@ -2,6 +2,8 @@
 headless = true
 address = "0.0.0.0"
 port = 5000
+enableCORS = false
+enableXsrfProtection = false
 
 [theme]
 # PowerBI-inspired dark theme
@@ -11,3 +13,6 @@ backgroundColor = "#1B1B1B"  # Dark background
 secondaryBackgroundColor = "#252525"  # Card background
 textColor = "#FFFFFF"  # White text
 font = "sans serif"
+
+[browser]
+gatherUsageStats = false
