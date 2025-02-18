@@ -73,6 +73,11 @@ def app():
         st.session_state.expanded_folders = {"/": True}
     if 'new_folder_name' not in st.session_state:
         st.session_state.new_folder_name = ""
+    if 'selected_table' not in st.session_state:
+        st.session_state.selected_table = ""
+    if 'available_columns' not in st.session_state:
+        st.session_state.available_columns = []
+
 
     # Sidebar with Windows Explorer-like folder tree
     with st.sidebar:
@@ -240,17 +245,25 @@ def app():
         # Get available tables
         available_tables = db_connector.get_available_tables(1)  # Using default connection
 
+        def update_columns():
+            if st.session_state.table_selector != st.session_state.selected_table:
+                st.session_state.selected_table = st.session_state.table_selector
+                if st.session_state.selected_table:
+                    st.session_state.available_columns = db_connector.get_column_names(1, st.session_state.selected_table)
+                else:
+                    st.session_state.available_columns = []
+
         with col2:
             table_name = st.selectbox(
                 "Table Name",
                 options=[""] + available_tables,
-                index=0 if not default_table else available_tables.index(default_table) + 1
+                index=0 if not st.session_state.selected_table else available_tables.index(st.session_state.selected_table) + 1,
+                key="table_selector",
+                on_change=update_columns
             )
 
         # Get columns for selected table
-        available_columns = []
-        if table_name:
-            available_columns = db_connector.get_column_names(1, table_name)
+        available_columns = st.session_state.available_columns
 
         # Rule Type and Parameters
         rule_type = st.selectbox(
