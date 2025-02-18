@@ -190,36 +190,56 @@ def app():
         for folder in [f for f in all_folders if f != "/"]:
             render_folder(folder, level=1)
 
+    # Get available tables outside the form
+    available_tables = db_connector.get_available_tables(1)  # Using default connection
+
+    # Table selection outside the form
+    col1, col2 = st.columns(2)
+    with col1:
+        selected_table = st.selectbox(
+            "Select Table",
+            options=[""] + available_tables,
+            index=0 if not st.session_state.get('selected_table') else available_tables.index(st.session_state.get('selected_table')) + 1,
+            key="table_selector"
+        )
+
+    # Update columns when table changes
+    if selected_table != st.session_state.get('selected_table'):
+        st.session_state.selected_table = selected_table
+        if selected_table:
+            st.session_state.available_columns = db_connector.get_column_names(1, selected_table)
+        else:
+            st.session_state.available_columns = []
+
+    # Display available columns
+    available_columns = st.session_state.get('available_columns', [])
+
     # Rule Configuration Form
-    st.header("Create/Edit Rule")
-
-    # If editing, pre-fill form with rule data
-    editing_rule = st.session_state.editing_rule
-    rule_id = None
-
-    if editing_rule:
-        rule_id = editing_rule.id
-        default_name = editing_rule.name
-        default_description = editing_rule.description
-        default_folder = editing_rule.folder
-        default_db_type = editing_rule.database
-        default_table = editing_rule.table
-        default_rule_type = editing_rule.type
-        default_column = editing_rule.column
-        default_threshold = editing_rule.threshold
-        default_parameters = editing_rule.parameters
-    else:
-        default_name = ""
-        default_description = ""
-        default_folder = "/"
-        default_db_type = None
-        default_table = ""
-        default_rule_type = "completeness"
-        default_column = ""
-        default_threshold = 95
-        default_parameters = {}
-
     with st.form(key=f"rule_form_{st.session_state.form_key}"):
+        st.header("Create/Edit Rule")
+
+        # If editing, pre-fill form with rule data
+        editing_rule = st.session_state.editing_rule
+        rule_id = None
+
+        if editing_rule:
+            rule_id = editing_rule.id
+            default_name = editing_rule.name
+            default_description = editing_rule.description
+            default_folder = editing_rule.folder
+            default_rule_type = editing_rule.type
+            default_column = editing_rule.column
+            default_threshold = editing_rule.threshold
+            default_parameters = editing_rule.parameters
+        else:
+            default_name = ""
+            default_description = ""
+            default_folder = "/"
+            default_rule_type = "completeness"
+            default_column = ""
+            default_threshold = 95
+            default_parameters = {}
+
         # Basic Rule Information
         col1, col2 = st.columns(2)
         with col1:
@@ -233,37 +253,12 @@ def app():
 
         rule_description = st.text_area("Description", value=default_description)
 
-        # Database Configuration
-        col1, col2 = st.columns(2)
-        with col1:
-            db_type = st.selectbox(
-                "Database Type",
-                ["postgresql"],  # Add more types as needed
-                index=0
-            )
-
-        # Get available tables
-        available_tables = db_connector.get_available_tables(1)  # Using default connection
-
-        def update_columns():
-            if st.session_state.table_selector != st.session_state.selected_table:
-                st.session_state.selected_table = st.session_state.table_selector
-                if st.session_state.selected_table:
-                    st.session_state.available_columns = db_connector.get_column_names(1, st.session_state.selected_table)
-                else:
-                    st.session_state.available_columns = []
-
-        with col2:
-            table_name = st.selectbox(
-                "Table Name",
-                options=[""] + available_tables,
-                index=0 if not st.session_state.selected_table else available_tables.index(st.session_state.selected_table) + 1,
-                key="table_selector",
-                on_change=update_columns
-            )
-
-        # Get columns for selected table
-        available_columns = st.session_state.available_columns
+        # Column selection
+        column_name = st.selectbox(
+            "Column Name",
+            options=[""] + available_columns,
+            index=0 if not default_column else (available_columns.index(default_column) + 1 if default_column in available_columns else 0)
+        )
 
         # Rule Type and Parameters
         rule_type = st.selectbox(
@@ -278,12 +273,6 @@ def app():
                 "statistical"
             ],
             index=["completeness", "uniqueness", "range", "pattern", "date_format", "cross_column", "statistical"].index(default_rule_type)
-        )
-
-        column_name = st.selectbox(
-            "Column Name",
-            options=[""] + available_columns,
-            index=0 if not default_column else (available_columns.index(default_column) + 1 if default_column in available_columns else 0)
         )
 
         # Conditional parameters based on rule type
@@ -346,29 +335,28 @@ def app():
             parameters = {"method": method, "threshold": threshold}
 
         # Threshold Configuration
-        threshold = st.slider(
+        quality_threshold = st.slider(
             "Quality Threshold (%)",
             0, 100,
             value=int(default_threshold)
         )
 
         # Submit button
-        button_label = "Update Rule" if editing_rule else "Create Rule"
-        submit = st.form_submit_button(button_label)
+        submitted = st.form_submit_button("Save Rule")
 
-        if submit:
-            if not all([rule_name, table_name, column_name]):
+        if submitted:
+            if not all([rule_name, selected_table, column_name]):
                 st.error("Please fill in all required fields")
             else:
                 rule_config = {
                     "name": rule_name,
                     "description": rule_description,
                     "folder": folder,
-                    "database": db_type,
-                    "table": table_name,
+                    "database": "postgresql",
+                    "table": selected_table,
                     "type": rule_type,
                     "column": column_name,
-                    "threshold": threshold,
+                    "threshold": quality_threshold,
                     "parameters": parameters
                 }
 
@@ -378,11 +366,12 @@ def app():
                         db_connector.update_rule(rule_config)
                         st.success("Rule updated successfully!")
                         st.session_state.editing_rule = None
-                        st.session_state.form_key += 1
                     else:
                         db_connector.save_rule(rule_config)
                         st.success("Rule created successfully!")
-                        st.session_state.form_key += 1
+
+                    st.session_state.form_key += 1
+                    st.rerun()
                 except ValueError as e:
                     st.error(str(e))
                 except Exception as e:
