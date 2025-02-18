@@ -57,6 +57,13 @@ def app():
         .folder-selected {
             background-color: rgba(98, 0, 238, 0.2);
         }
+        /* Light blue folder icons */
+        .stButton button {
+            color: #87CEEB !important;
+        }
+        .stButton button:hover {
+            color: #ADD8E6 !important;
+        }
         </style>
         """, unsafe_allow_html=True)
 
@@ -93,7 +100,7 @@ def app():
                     help=f"Click to select folder: {folder}"
                 ):
                     st.session_state.current_folder = folder
-                    st.experimental_rerun()
+                    st.rerun()
 
             with col2:
                 if st.button(
@@ -102,7 +109,7 @@ def app():
                     help="Toggle folder view"
                 ):
                     st.session_state.expanded_folders[folder] = not is_expanded
-                    st.experimental_rerun()
+                    st.rerun()
 
         # Render root folder first
         render_folder("/")
@@ -304,7 +311,7 @@ def app():
         if st.button("Cancel Editing"):
             st.session_state.editing_rule = None
             st.session_state.form_key += 1
-            st.experimental_rerun()
+            st.rerun()
 
     # Display Rules in Current Folder
     st.header(f"Rules in {selected_folder}")
@@ -333,7 +340,7 @@ def app():
                 if st.button("Edit", key=f"edit_{rule.id}_{st.session_state.form_key}"):
                     st.session_state.editing_rule = rule
                     st.session_state.form_key += 1
-                    st.experimental_rerun()
+                    st.rerun()
 
 if __name__ == "__main__":
     app()
