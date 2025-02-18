@@ -1,6 +1,7 @@
 import streamlit as st
 from utils.database import DatabaseConnector
 from utils.auth import require_auth
+from utils.data_quality import DataQualityChecker
 import json
 from typing import Dict, List
 import os
@@ -14,6 +15,41 @@ def get_folder_structure(rules: List) -> Dict[str, List]:
             folders[folder] = []
         folders[folder].append(rule)
     return folders
+
+def get_preview_sql(rule: Dict) -> str:
+    """Generate preview SQL for a rule configuration"""
+    try:
+        if rule['type'] == 'completeness':
+            return DataQualityChecker.generate_completeness_query(rule['table'], rule['column'])
+        elif rule['type'] == 'uniqueness':
+            return DataQualityChecker.generate_uniqueness_query(rule['table'], rule['column'])
+        elif rule['type'] == 'range':
+            params = rule.get('parameters', {})
+            min_val = float(params.get('min_val', 0))
+            max_val = float(params.get('max_val', 100))
+            return DataQualityChecker.generate_range_query(rule['table'], rule['column'], min_val, max_val)
+        elif rule['type'] == 'pattern':
+            params = rule.get('parameters', {})
+            pattern = params.get('pattern', '')
+            return DataQualityChecker.generate_pattern_query(rule['table'], rule['column'], pattern)
+        elif rule['type'] == 'date_format':
+            params = rule.get('parameters', {})
+            format = params.get('format', 'YYYY-MM-DD')
+            return DataQualityChecker.generate_date_format_query(rule['table'], rule['column'], format)
+        elif rule['type'] == 'cross_column':
+            params = rule.get('parameters', {})
+            column2 = params.get('column2', '')
+            operator = params.get('operator', '=')
+            value = params.get('value', None)
+            return DataQualityChecker.generate_cross_column_query(rule['table'], rule['column'], column2, operator, value)
+        elif rule['type'] == 'statistical':
+            params = rule.get('parameters', {})
+            method = params.get('method', 'zscore')
+            threshold = float(params.get('threshold', 3.0))
+            return DataQualityChecker.generate_statistical_query(rule['table'], rule['column'], method, threshold)
+        return "Unsupported rule type"
+    except Exception as e:
+        return f"Error generating SQL: {str(e)}"
 
 @require_auth
 def app():
@@ -170,7 +206,7 @@ def app():
     else:
         default_name = ""
         default_description = ""
-        default_folder = "/" #Corrected default folder
+        default_folder = "/"
         default_db_type = None
         default_table = ""
         default_rule_type = "completeness"
@@ -187,7 +223,7 @@ def app():
             folder = st.selectbox(
                 "Folder",
                 options=sorted(all_folders),
-                index=all_folders.index(default_folder if default_folder in all_folders else "/") #Corrected default folder selection
+                index=all_folders.index(default_folder if default_folder in all_folders else "/")
             )
 
         rule_description = st.text_area("Description", value=default_description)
@@ -352,6 +388,7 @@ def app():
 
             with col1:
                 with st.expander(f"Rule: {rule.name}"):
+                    # Rule configuration
                     st.json({
                         "name": rule.name,
                         "description": rule.description,
@@ -363,6 +400,16 @@ def app():
                         "threshold": rule.threshold,
                         "parameters": rule.parameters
                     })
+
+                    # Display SQL preview
+                    st.markdown("### Effective SQL")
+                    preview_sql = get_preview_sql({
+                        "type": rule.type,
+                        "table": rule.table,
+                        "column": rule.column,
+                        "parameters": rule.parameters
+                    })
+                    st.code(preview_sql, language="sql")
 
             with col2:
                 if st.button("Edit", key=f"edit_{rule.id}_{st.session_state.form_key}"):
