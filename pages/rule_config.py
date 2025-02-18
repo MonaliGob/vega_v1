@@ -190,30 +190,6 @@ def app():
         for folder in [f for f in all_folders if f != "/"]:
             render_folder(folder, level=1)
 
-    # Get available tables outside the form
-    available_tables = db_connector.get_available_tables(1)  # Using default connection
-
-    # Table selection outside the form
-    col1, col2 = st.columns(2)
-    with col1:
-        selected_table = st.selectbox(
-            "Select Table",
-            options=[""] + available_tables,
-            index=0 if not st.session_state.get('selected_table') else available_tables.index(st.session_state.get('selected_table')) + 1,
-            key="table_selector"
-        )
-
-    # Update columns when table changes
-    if selected_table != st.session_state.get('selected_table'):
-        st.session_state.selected_table = selected_table
-        if selected_table:
-            st.session_state.available_columns = db_connector.get_column_names(1, selected_table)
-        else:
-            st.session_state.available_columns = []
-
-    # Display available columns
-    available_columns = st.session_state.get('available_columns', [])
-
     # Rule Configuration Form
     with st.form(key=f"rule_form_{st.session_state.form_key}"):
         st.header("Create/Edit Rule")
@@ -253,6 +229,33 @@ def app():
 
         rule_description = st.text_area("Description", value=default_description)
 
+        # Database and Table Selection
+        st.subheader("Database Configuration")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            db_type = st.selectbox(
+                "Database Type",
+                ["postgresql"],  # Add more types as needed
+                index=0
+            )
+
+        # Get available tables
+        available_tables = db_connector.get_available_tables(1)  # Using default connection
+
+        with col2:
+            selected_table = st.selectbox(
+                "Select Table",
+                options=[""] + available_tables,
+                index=0 if not st.session_state.get('selected_table') else available_tables.index(st.session_state.get('selected_table')) + 1
+            )
+
+        # Update available columns based on selected table
+        if selected_table:
+            available_columns = db_connector.get_column_names(1, selected_table)
+        else:
+            available_columns = []
+
         # Column selection
         column_name = st.selectbox(
             "Column Name",
@@ -261,6 +264,7 @@ def app():
         )
 
         # Rule Type and Parameters
+        st.subheader("Rule Configuration")
         rule_type = st.selectbox(
             "Rule Type",
             [
@@ -352,7 +356,7 @@ def app():
                     "name": rule_name,
                     "description": rule_description,
                     "folder": folder,
-                    "database": "postgresql",
+                    "database": db_type,
                     "table": selected_table,
                     "type": rule_type,
                     "column": column_name,
