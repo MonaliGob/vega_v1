@@ -59,12 +59,19 @@ def app():
         .folder-selected {
             background-color: rgba(98, 0, 238, 0.2);
         }
-        /* Light blue folder icons */
-        .stButton button {
-            color: #87CEEB !important;
+        .rule-item {
+            margin-left: 20px;
+            padding: 3px 5px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.8);
         }
-        .stButton button:hover {
-            color: #ADD8E6 !important;
+        .folder-icon {
+            color: #87CEEB;
+            margin-right: 5px;
+        }
+        .rule-icon {
+            color: #B0C4DE;
+            margin-right: 5px;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -96,7 +103,8 @@ def app():
             folder_class = "folder-selected" if is_current else ""
 
             # Count rules in folder
-            rule_count = len(folders.get(folder, []))
+            rules_in_folder = folders.get(folder, [])
+            rule_count = len(rules_in_folder)
 
             # Create expandable section
             is_expanded = st.session_state.expanded_folders.get(folder, False)
@@ -122,15 +130,24 @@ def app():
                     st.session_state.expanded_folders[folder] = not is_expanded
                     st.rerun()
 
+            # Display rules if folder is expanded
+            if is_expanded:
+                for rule in rules_in_folder:
+                    st.markdown(
+                        f"""
+                        <div class="rule-item">
+                            <span class="rule-icon">📄</span> {rule.name}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
         # Render root folder first
         render_folder("/")
 
         # Render all other folders
         for folder in [f for f in all_folders if f != "/"]:
             render_folder(folder, level=1)
-
-    # Main content area
-    selected_folder = st.session_state.current_folder
 
     # Rule Configuration Form
     st.header("Create/Edit Rule")
@@ -153,7 +170,7 @@ def app():
     else:
         default_name = ""
         default_description = ""
-        default_folder = selected_folder
+        default_folder = "/" #Corrected default folder
         default_db_type = None
         default_table = ""
         default_rule_type = "completeness"
@@ -170,7 +187,7 @@ def app():
             folder = st.selectbox(
                 "Folder",
                 options=sorted(all_folders),
-                index=all_folders.index(default_folder if default_folder in all_folders else selected_folder)
+                index=all_folders.index(default_folder if default_folder in all_folders else "/") #Corrected default folder selection
             )
 
         rule_description = st.text_area("Description", value=default_description)
@@ -325,9 +342,9 @@ def app():
             st.rerun()
 
     # Display Rules in Current Folder
-    st.header(f"Rules in {selected_folder}")
+    st.header(f"Rules in {st.session_state.current_folder}")
 
-    current_folder_rules = folders.get(selected_folder, [])
+    current_folder_rules = folders.get(st.session_state.current_folder, [])
 
     for rule in current_folder_rules:
         with st.container():
