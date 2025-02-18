@@ -263,7 +263,15 @@ class DatabaseConnector:
     def get_rules(self) -> List[Rule]:
         return self.db.query(Rule).all()
 
+    def rule_name_exists(self, name: str) -> bool:
+        """Check if a rule with the given name already exists"""
+        return self.db.query(Rule).filter(Rule.name == name).first() is not None
+
     def save_rule(self, rule_data: Dict) -> Rule:
+        # Check if rule name already exists
+        if self.rule_name_exists(rule_data["name"]):
+            raise ValueError(f"A rule with name '{rule_data['name']}' already exists")
+
         rule = Rule(
             name=rule_data["name"],
             description=rule_data["description"],

@@ -359,16 +359,21 @@ def app():
                     "parameters": parameters
                 }
 
-                if editing_rule:
-                    rule_config["id"] = rule_id
-                    db_connector.update_rule(rule_config)
-                    st.success("Rule updated successfully!")
-                    st.session_state.editing_rule = None
-                    st.session_state.form_key += 1
-                else:
-                    db_connector.save_rule(rule_config)
-                    st.success("Rule created successfully!")
-                    st.session_state.form_key += 1
+                try:
+                    if editing_rule:
+                        rule_config["id"] = rule_id
+                        db_connector.update_rule(rule_config)
+                        st.success("Rule updated successfully!")
+                        st.session_state.editing_rule = None
+                        st.session_state.form_key += 1
+                    else:
+                        db_connector.save_rule(rule_config)
+                        st.success("Rule created successfully!")
+                        st.session_state.form_key += 1
+                except ValueError as e:
+                    st.error(str(e))
+                except Exception as e:
+                    st.error(f"An error occurred: {str(e)}")
 
     # Cancel editing button
     if editing_rule:
