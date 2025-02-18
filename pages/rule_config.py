@@ -35,6 +35,8 @@ def app():
         st.session_state.current_folder = "/"
     if 'expanded_folders' not in st.session_state:
         st.session_state.expanded_folders = {"/": True}
+    if 'new_folder_name' not in st.session_state:
+        st.session_state.new_folder_name = ""
 
     # Sidebar with Windows Explorer-like folder tree
     with st.sidebar:
@@ -69,13 +71,22 @@ def app():
 
         st.markdown("### 📁 Folders")
 
-        # New folder creation
-        new_folder = st.text_input("📝 New Folder", key="new_folder_input")
-        if new_folder:
-            if new_folder not in folders and new_folder.strip():
-                if new_folder not in st.session_state.expanded_folders:
-                    st.session_state.expanded_folders[new_folder] = True
-                st.success(f"📁 Folder '{new_folder}' created!")
+        # New folder creation with button
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            new_folder_name = st.text_input("📝 New Folder", key="new_folder_input", value=st.session_state.new_folder_name)
+        with col2:
+            if st.button("Create", key="create_folder_btn"):
+                if new_folder_name and new_folder_name.strip():
+                    if new_folder_name not in folders:
+                        folders[new_folder_name] = []
+                        st.session_state.expanded_folders[new_folder_name] = True
+                        st.success(f"📁 Folder '{new_folder_name}' created!")
+                        st.session_state.new_folder_name = ""
+                    else:
+                        st.error("Folder already exists!")
+                else:
+                    st.error("Please enter a folder name!")
 
         # Display folder tree
         all_folders = sorted(list(set(list(folders.keys()) + ["/"])))
