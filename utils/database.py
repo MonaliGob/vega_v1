@@ -195,14 +195,21 @@ class DatabaseConnector:
     def get_column_names(self, connection_id: int, table_name: str) -> List[str]:
         """Get column names for a specific table in a database connection"""
         try:
+            # First ensure we have a valid connection
             connection = self.db.query(DatabaseConnection).filter(
                 DatabaseConnection.id == connection_id
             ).first()
 
             if not connection:
+                print(f"No connection found for id: {connection_id}")
+                return []
+
+            if not table_name:
+                print("No table name provided")
                 return []
 
             if connection.connection_type == "postgresql":
+                # Create connection string
                 conn = psycopg2.connect(
                     host=connection.host,
                     port=connection.port,
@@ -211,18 +218,42 @@ class DatabaseConnector:
                     password=connection.password,
                     sslmode=connection.ssl_mode
                 )
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_schema = 'public' 
-                    AND table_name = %s
-                    ORDER BY ordinal_position;
-                """, (table_name,))
-                columns = [row[0] for row in cursor.fetchall()]
-                cursor.close()
-                conn.close()
-                return columns
+
+                try:
+                    cursor = conn.cursor()
+
+                    # First check if table exists
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT 1 
+                            FROM information_schema.tables 
+                            WHERE table_schema = 'public' 
+                            AND table_name = %s
+                        );
+                    """, (table_name,))
+
+                    table_exists = cursor.fetchone()[0]
+
+                    if not table_exists:
+                        print(f"Table {table_name} does not exist")
+                        return []
+
+                    # Get column names
+                    cursor.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                        AND table_name = %s
+                        ORDER BY ordinal_position;
+                    """, (table_name,))
+
+                    columns = [row[0] for row in cursor.fetchall()]
+                    print(f"Found columns for {table_name}: {columns}")
+                    return columns
+
+                finally:
+                    cursor.close()
+                    conn.close()
 
             return []
         except Exception as e:
