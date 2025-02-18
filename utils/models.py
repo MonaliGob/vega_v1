@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, JSON, Boolean
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, JSON, Boolean, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
@@ -69,10 +69,56 @@ class Result(Base):
 # Create tables
 def init_db():
     try:
+        # Create all tables
         Base.metadata.create_all(bind=engine)
         print("Database tables created successfully")
+
+        # Create and populate sample table if it doesn't exist
+        with engine.connect() as conn:
+            conn.execute(text("""
+                DROP TABLE IF EXISTS sample_table;
+                CREATE TABLE sample_table (
+                    id SERIAL PRIMARY KEY,
+                    numeric_value INTEGER,
+                    category VARCHAR(50),
+                    measurement FLOAT
+                );
+            """))
+
+            # Populate with sample data
+            conn.execute(text("""
+                INSERT INTO sample_table (numeric_value, category, measurement)
+                SELECT 
+                    floor(random() * 100 + 1)::int,
+                    'Category ' || (floor(random() * 5 + 1)::int)::text,
+                    random() * 100
+                FROM generate_series(1, 1000);
+            """))
+            conn.commit()
+            print("Sample table created and populated successfully")
+
+            # Create a default database connection if none exists
+            result = conn.execute(text("SELECT COUNT(*) FROM database_connections")).scalar()
+            if result == 0:
+                conn.execute(text("""
+                    INSERT INTO database_connections (
+                        name, description, connection_type, host, port, 
+                        database, username, password, ssl_mode, is_active
+                    ) VALUES (
+                        'Default PostgreSQL', 'Default local connection', 'postgresql',
+                        :host, :port, :database, :username, :password, 'require', true
+                    )
+                """), {
+                    'host': os.getenv('PGHOST'),
+                    'port': int(os.getenv('PGPORT')),
+                    'database': os.getenv('PGDATABASE'),
+                    'username': os.getenv('PGUSER'),
+                    'password': os.getenv('PGPASSWORD')
+                })
+                conn.commit()
+                print("Default database connection created")
     except Exception as e:
-        print(f"Error creating database tables: {str(e)}")
+        print(f"Error initializing database: {str(e)}")
 
 init_db()
 

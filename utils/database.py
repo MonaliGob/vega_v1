@@ -123,6 +123,9 @@ class DatabaseConnector:
     def get_available_tables(self, connection_id: int) -> List[str]:
         """Get available tables for a specific database connection"""
         try:
+            # Ensure sample table exists first
+            self._ensure_sample_table_exists()
+
             connection = self.db.query(DatabaseConnection).filter(
                 DatabaseConnection.id == connection_id
             ).first()
@@ -156,6 +159,38 @@ class DatabaseConnector:
         except Exception as e:
             print(f"Error getting tables: {str(e)}")
             return []
+
+    def _ensure_sample_table_exists(self):
+        try:
+            with self.engine.connect() as conn:
+                # Check if table exists
+                result = conn.execute(text(
+                    "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'sample_table')"
+                )).scalar()
+
+                if not result:
+                    # Create and populate sample table
+                    conn.execute(text("""
+                        CREATE TABLE IF NOT EXISTS sample_table (
+                            id SERIAL PRIMARY KEY,
+                            numeric_value INTEGER,
+                            category VARCHAR(50),
+                            measurement FLOAT
+                        )
+                    """))
+
+                    conn.execute(text("""
+                        INSERT INTO sample_table (numeric_value, category, measurement)
+                        SELECT 
+                            floor(random() * 100 + 1)::int,
+                            'Category ' || (floor(random() * 5 + 1)::int)::text,
+                            random() * 100
+                        FROM generate_series(1, 1000)
+                    """))
+                    conn.commit()
+                    print("Sample table created and populated successfully")
+        except Exception as e:
+            print(f"Error ensuring sample table exists: {str(e)}")
 
     def get_column_names(self, connection_id: int, table_name: str) -> List[str]:
         """Get column names for a specific table in a database connection"""
