@@ -111,7 +111,7 @@ def main():
     with st.container():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.image("assets/vega_logo.svg", use_column_width=True)
+            st.image("attached_assets/image_1739823857967.png", use_container_width=True)
 
     # Overview Section
     st.markdown('<div class="md-card">', unsafe_allow_html=True)
