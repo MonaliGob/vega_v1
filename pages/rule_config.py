@@ -6,7 +6,6 @@ import json
 from typing import Dict, List
 import os
 from datetime import datetime
-from st_dnd import DragAndDrop
 
 def get_folder_structure(rules: List) -> Dict[str, List]:
     db_connector = DatabaseConnector()
@@ -46,26 +45,6 @@ def get_preview_sql(rule: Dict) -> str:
         return "Unsupported rule type"
     except Exception as e:
         return f"Error generating SQL: {str(e)}"
-
-def handle_folder_drop(source_id: str, target_folder: str, db_connector: DatabaseConnector):
-    """Handle dropping a folder or rule into a target folder"""
-    try:
-        if source_id.startswith('folder_'):
-            # Moving a folder
-            folder_name = source_id[7:]  # Remove 'folder_' prefix
-            if folder_name != target_folder and not target_folder.startswith(folder_name):
-                new_name = f"{target_folder}/{os.path.basename(folder_name)}" if target_folder != "/" else os.path.basename(folder_name)
-                db_connector.rename_folder(folder_name, new_name)
-                return True
-        elif source_id.startswith('rule_'):
-            # Moving a rule
-            rule_id = int(source_id[5:])  # Remove 'rule_' prefix
-            db_connector.move_rule(rule_id, target_folder)
-            return True
-        return False
-    except Exception as e:
-        st.error(f"Error moving item: {str(e)}")
-        return False
 
 @require_auth
 def app():
@@ -298,7 +277,7 @@ def app():
             st.session_state.form_key += 1
             st.rerun()
 
-    # Sidebar with draggable folder tree
+    # Sidebar with folder tree
     with st.sidebar:
         st.markdown("""
             <style>
@@ -307,26 +286,25 @@ def app():
                 border-left: 1px solid rgba(255, 255, 255, 0.1);
                 padding-left: 10px;
             }
-            .draggable-item {
-                cursor: move;
-                transition: background-color 0.2s;
-                border-radius: 4px;
+            .folder-item {
                 padding: 8px;
-                margin: 4px 0;
+                cursor: pointer;
+                border-radius: 4px;
+                transition: background-color 0.2s;
             }
-            .draggable-item:hover {
+            .folder-item:hover {
                 background-color: rgba(255, 255, 255, 0.1);
             }
-            .drop-target {
-                border: 2px dashed rgba(98, 0, 238, 0.5);
+            .rule-item {
+                padding: 6px;
+                margin-left: 20px;
+                font-size: 0.9em;
+                color: rgba(255, 255, 255, 0.8);
                 border-radius: 4px;
-                padding: 8px;
-                margin: 4px 0;
-                transition: all 0.2s;
+                transition: background-color 0.2s;
             }
-            .drop-target.hover {
-                border-color: rgba(98, 0, 238, 1);
-                background-color: rgba(98, 0, 238, 0.1);
+            .rule-item:hover {
+                background-color: rgba(255, 255, 255, 0.05);
             }
             .folder-icon {
                 color: #87CEEB;
@@ -381,50 +359,48 @@ def app():
                 else:
                     st.error("Please enter a folder name!")
 
-        # Display folder tree with drag and drop
         def render_folder(folder: str, level: int = 0):
             is_expanded = st.session_state.expanded_folders.get(folder, False)
 
-            # Create draggable folder item
-            folder_id = f"folder_{folder}"
-            with DragAndDrop(key=folder_id, type="folder"):
-                col1, col2 = st.columns([8, 2])
-                with col1:
-                    st.markdown(
-                        f"""
-                        <div class="draggable-item" style="margin-left: {level * 20}px">
-                            {'📂' if is_expanded else '📁'} {folder}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                with col2:
-                    if st.button("👁️", key=f"expand_{folder}"):
-                        st.session_state.expanded_folders[folder] = not is_expanded
-                        st.rerun()
-
-            # Create drop target zone
-            with DragAndDrop(key=f"drop_{folder}", type="folder", on_drop=lambda src: handle_folder_drop(src, folder, db_connector)):
+            # Folder header with expand/collapse button
+            col1, col2 = st.columns([8, 2])
+            with col1:
                 st.markdown(
-                    f"""<div class="drop-target" style="margin-left: {level * 20}px">
-                        Drop here to move to {folder}
-                    </div>""",
+                    f"""
+                    <div class="folder-item" style="margin-left: {level * 20}px">
+                        {'📂' if is_expanded else '📁'} {folder}
+                    </div>
+                    """,
                     unsafe_allow_html=True
                 )
+            with col2:
+                if st.button("👁️", key=f"expand_{folder}"):
+                    st.session_state.expanded_folders[folder] = not is_expanded
+                    st.rerun()
 
             if is_expanded:
                 # Display rules in folder
-                for rule in folders.get(folder, []):
-                    rule_id = f"rule_{rule.id}"
-                    with DragAndDrop(key=rule_id, type="rule"):
+                rules_in_folder = folders.get(folder, [])
+                for rule in rules_in_folder:
+                    cols = st.columns([6, 2])
+                    with cols[0]:
                         st.markdown(
                             f"""
-                            <div class="draggable-item" style="margin-left: {(level + 1) * 20}px">
+                            <div class="rule-item" style="margin-left: {(level + 1) * 20}px">
                                 📄 {rule.name}
                             </div>
                             """,
                             unsafe_allow_html=True
                         )
+                    with cols[1]:
+                        target_folder = st.selectbox(
+                            "Move to",
+                            options=[f for f in folders.keys()],
+                            key=f"move_rule_{rule.id}"
+                        )
+                        if st.button("Move", key=f"move_btn_{rule.id}"):
+                            db_connector.move_rule(rule.id, target_folder)
+                            st.rerun()
 
                 # Display child folders
                 child_folders = [f for f in folders.keys() if f != "/" and f.startswith(folder + "/")]
