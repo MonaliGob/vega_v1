@@ -47,6 +47,7 @@ def main():
     options = {
         "show_menu": False,
         "show_sidebar": False,
+        "hide_nav": True
     }
 
     page = st_navbar(
