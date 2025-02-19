@@ -24,25 +24,17 @@ def main():
         "nav": {
             "background-color": "#6200ee",
             "justify-content": "center",
-            "display": "flex",
             "align-items": "center",
             "padding": "0 24px",
-            "width": "100vw",
-            "position": "fixed",
-            "top": "0",
-            "left": "0",
-            "z-index": "999",
             "height": "64px"
         },
         "img": {
             "padding-right": "14px",
-            "height": "40px",
-            "margin": "8px 0"
+            "height": "40px"
         },
         "span": {
             "color": "white",
             "padding": "14px",
-            "display": "inline-block",
             "font-family": "sans-serif",
             "font-size": "14px"
         },
@@ -79,14 +71,11 @@ def main():
         options=options,
     )
 
-    # Add padding and ensure navigation visibility
+    # Add basic styling
     st.markdown("""
         <style>
-        .main {
-            padding-top: 80px !important;
-        }
         .stApp {
-            margin-top: 64px !important;
+            margin-top: 20px;
         }
         div[data-testid="stToolbar"] {
             display: none;
