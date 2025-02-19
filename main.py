@@ -16,25 +16,32 @@ def main():
 
     pages = ["Main", "Execute Rules", "Rules", "Results"]
     parent_dir = os.path.dirname(os.path.abspath(__file__))
-    logo_path = os.path.join(parent_dir, "attached_assets/image_1739823857967.png")
+    logo_path = os.path.join(parent_dir, "assets/vega_logo.svg")
     styles = {
         "nav": {
-            "background-color": "#6200ee",  # Material Design primary color
+            "background-color": "#6200ee",
             "justify-content": "center",
+            "display": "flex",
+            "align-items": "center",
+            "padding": "0 24px",
+            "width": "100%"
         },
         "img": {
             "padding-right": "14px",
             "height": "40px",
+            "margin": "8px 0"
         },
         "span": {
             "color": "white",
             "padding": "14px",
+            "display": "inline-block"
         },
         "active": {
             "background-color": "rgba(255, 255, 255, 0.1)",
             "color": "white",
             "font-weight": "500",
             "padding": "14px",
+            "border-radius": "4px"
         }
     }
     options = {
@@ -49,14 +56,11 @@ def main():
         options=options,
     )
 
-    # Main content area
-    st.container()
-
     # Logo Section
     with st.container():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.image("attached_assets/image_1739823857967.png", use_container_width=True)
+            st.image(logo_path, use_container_width=True)
 
     # Overview Section
     st.markdown('<div class="md-card">', unsafe_allow_html=True)
