@@ -5,16 +5,11 @@ from utils.data_quality import DataQualityChecker
 import json
 from typing import Dict, List
 import os
+from datetime import datetime
 
 def get_folder_structure(rules: List) -> Dict[str, List]:
-    """Organize rules into folder structure"""
-    folders = {}
-    for rule in rules:
-        folder = rule.folder if rule.folder else "/"
-        if folder not in folders:
-            folders[folder] = []
-        folders[folder].append(rule)
-    return folders
+    db_connector = DatabaseConnector()
+    return db_connector.get_folder_structure()
 
 def get_preview_sql(rule: Dict) -> str:
     """Generate preview SQL for a rule configuration"""
@@ -329,13 +324,20 @@ def app():
         with col2:
             if st.button("Create", key="create_folder_btn"):
                 if new_folder_name and new_folder_name.strip():
-                    if new_folder_name not in folders:
-                        folders[new_folder_name] = []
-                        st.session_state.expanded_folders[new_folder_name] = True
-                        st.success(f"📁 Folder '{new_folder_name}' created!")
-                        st.session_state.new_folder_name = ""
-                    else:
-                        st.error("Folder already exists!")
+                    try:
+                        if not db_connector.folder_exists(new_folder_name):
+                            db_connector.create_folder({
+                                "name": new_folder_name,
+                                "description": f"Created on {datetime.utcnow()}"
+                            })
+                            st.session_state.expanded_folders[new_folder_name] = True
+                            st.success(f"📁 Folder '{new_folder_name}' created!")
+                            st.session_state.new_folder_name = ""
+                            st.rerun()
+                        else:
+                            st.error("Folder already exists!")
+                    except Exception as e:
+                        st.error(f"Failed to create folder: {str(e)}")
                 else:
                     st.error("Please enter a folder name!")
 

@@ -2,7 +2,7 @@ import pandas as pd
 from typing import Dict, List, Optional
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
-from .models import get_db, Rule, Result, DatabaseConnection, engine
+from .models import get_db, Rule, Result, DatabaseConnection, Folder, engine
 import os
 import psycopg2
 from psycopg2 import sql
@@ -373,3 +373,44 @@ class DatabaseConnector:
                     print("Sample table created and populated successfully")
         except Exception as e:
             print(f"Error ensuring sample table exists: {str(e)}")
+
+    def get_folders(self) -> List[Folder]:
+        """Get all folders"""
+        return self.db.query(Folder).all()
+
+    def create_folder(self, folder_data: Dict) -> Folder:
+        """Create a new folder"""
+        try:
+            folder = Folder(
+                name=folder_data["name"],
+                description=folder_data.get("description", ""),
+                parent_folder=folder_data.get("parent_folder", "/")
+            )
+            self.db.add(folder)
+            self.db.commit()
+            self.db.refresh(folder)
+            return folder
+        except Exception as e:
+            self.db.rollback()
+            raise Exception(f"Failed to create folder: {str(e)}")
+
+    def folder_exists(self, name: str) -> bool:
+        """Check if a folder with the given name exists"""
+        return self.db.query(Folder).filter(Folder.name == name).first() is not None
+
+    def get_folder_structure(self) -> Dict[str, List]:
+        """Get folder structure with rules"""
+        folders = {"/": []}  # Initialize with root folder
+
+        # Add all folders from database
+        db_folders = self.get_folders()
+        for folder in db_folders:
+            folders[folder.name] = []
+
+        # Add rules to their respective folders
+        rules = self.get_rules()
+        for rule in rules:
+            folder = rule.folder if rule.folder in folders else "/"
+            folders[folder].append(rule)
+
+        return folders

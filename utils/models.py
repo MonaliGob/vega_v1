@@ -56,6 +56,15 @@ class Rule(Base):
     parameters = Column(JSON)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class Folder(Base):
+    __tablename__ = "folders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    description = Column(String, nullable=True)
+    parent_folder = Column(String, default="/")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class Result(Base):
     __tablename__ = "results"
 
