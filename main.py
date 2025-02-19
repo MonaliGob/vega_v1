@@ -29,6 +29,22 @@ def main():
             background-color: var(--md-sys-color-background);
         }
 
+        /* Logo Container */
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: var(--md-sys-color-surface);
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container img {
+            max-width: 240px;
+            height: auto;
+        }
+
         /* Material Design Components */
         .md-card {
             background-color: var(--md-sys-color-surface);
@@ -50,24 +66,6 @@ def main():
             font-weight: 500;
             letter-spacing: 0.0125em;
             margin-bottom: 16px;
-        }
-
-        h1 {
-            font-size: 2.125rem;
-            line-height: 2.5rem;
-        }
-
-        h2 {
-            font-size: 1.5rem;
-            line-height: 2rem;
-        }
-
-        p {
-            color: var(--md-sys-color-on-surface);
-            font-family: 'Roboto', sans-serif;
-            font-size: 1rem;
-            line-height: 1.5rem;
-            letter-spacing: 0.03125em;
         }
 
         /* Custom Components */
@@ -106,26 +104,18 @@ def main():
             background-color: #7722FF;
             border: none;
         }
-
-        .stTextInput input, .stSelectbox select {
-            background-color: var(--md-sys-color-surface-variant);
-            color: var(--md-sys-color-on-surface);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 4px;
-        }
-
-        /* Navigation */
-        .stSidebar {
-            background-color: var(--md-sys-color-surface);
-        }
         </style>
     """, unsafe_allow_html=True)
 
     if not check_password():
         return
 
-    # Main Content
-    st.title("VEGA - Data Quality Platform")
+    # Logo
+    st.markdown("""
+        <div class="logo-container">
+            <img src="assets/vega_logo.svg" alt="VEGA Logo">
+        </div>
+    """, unsafe_allow_html=True)
 
     # Overview Section
     st.markdown('<div class="md-card">', unsafe_allow_html=True)
