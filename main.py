@@ -6,7 +6,7 @@ def main():
         page_title="VEGA",
         page_icon="📊",
         layout="wide",
-        initial_sidebar_state="expanded"
+        initial_sidebar_state="collapsed"
     )
 
     # Material Design inspired CSS
@@ -85,6 +85,62 @@ def main():
             margin-top: 4px;
         }
 
+        /* Material Design Navigation */
+        .material-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: var(--md-sys-color-surface);
+            padding: 8px 16px;
+            z-index: 1000;
+            box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 
+                       0px 4px 5px 0px rgba(0,0,0,0.14), 
+                       0px 1px 10px 0px rgba(0,0,0,0.12);
+        }
+
+        .material-nav-content {
+            display: flex;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            height: 64px;
+        }
+
+        .material-nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .material-nav-logo {
+            height: 40px;
+        }
+
+        .material-nav-links {
+            display: flex;
+            align-items: center;
+            margin-left: 48px;
+            gap: 24px;
+        }
+
+        .material-nav-link {
+            color: var(--md-sys-color-on-primary);
+            text-decoration: none;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.1px;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .material-nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
         /* Streamlit Overrides */
         .stButton button {
             background-color: var(--md-sys-color-primary);
@@ -106,6 +162,26 @@ def main():
 
     if not check_password():
         return
+
+    # Material Design Navigation Bar
+    st.markdown("""
+        <div class="material-navbar">
+            <div class="material-nav-content">
+                <div class="material-nav-brand">
+                    <img src="attached_assets/image_1739823857967.png" class="material-nav-logo">
+                </div>
+                <div class="material-nav-links">
+                    <a href="/" class="material-nav-link">📊 Main</a>
+                    <a href="/pages/execute_rules" class="material-nav-link">🎯 Execute Rules</a>
+                    <a href="/pages/rule_config" class="material-nav-link">⚙️ Rules</a>
+                    <a href="/pages/results" class="material-nav-link">📈 Results</a>
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Content wrapper with Material Design spacing
+    st.markdown('<div class="material-content">', unsafe_allow_html=True)
 
     # Logo Section
     with st.container():
@@ -170,6 +246,8 @@ def main():
         if st.button("View Results"):
             st.switch_page("pages/results.py")
         st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
