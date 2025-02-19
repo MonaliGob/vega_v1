@@ -6,12 +6,10 @@ enableCORS = false
 enableXsrfProtection = false
 
 [theme]
-# PowerBI-inspired dark theme
-base = "dark"
-primaryColor = "#0078D4"  # PowerBI blue
-backgroundColor = "#1B1B1B"  # Dark background
-secondaryBackgroundColor = "#252525"  # Card background
-textColor = "#FFFFFF"  # White text
+primaryColor = "#6200ee"  # Material Design primary
+secondaryBackgroundColor = "#1e1e1e"  # Material surface color
+backgroundColor = "#121212"  # Material background color
+textColor = "#ffffff"
 font = "sans serif"
 
 [browser]
