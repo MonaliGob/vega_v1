@@ -1309,6 +1309,7 @@ dependencies = [
     { name = "scipy" },
     { name = "sqlalchemy" },
     { name = "streamlit" },
+    { name = "streamlit-navigation-bar" },
     { name = "trafilatura" },
     { name = "twilio" },
 ]
@@ -1323,6 +1324,7 @@ requires-dist = [
     { name = "scipy", specifier = ">=1.15.2" },
     { name = "sqlalchemy", specifier = ">=2.0.38" },
     { name = "streamlit", specifier = ">=1.42.0" },
+    { name = "streamlit-navigation-bar", specifier = ">=3.3.0" },
     { name = "trafilatura", specifier = ">=2.0.0" },
     { name = "twilio", specifier = ">=9.4.5" },
 ]
@@ -1527,6 +1529,18 @@ wheels = [
 ]
 
 [[package]]
+name = "st-theme"
+version = "1.2.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "streamlit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/31/84/3e2fd95f5acaf6c92a51e7f038f1120235c65bb0b8be9bf43aa9fb4267e5/st-theme-1.2.3.tar.gz", hash = "sha256:ca97aece1a48ded6e83fd742c27cb0851e1bce2100ab4b6c37c7b6e003b65b42", size = 73873 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/30/09/cd7134f1ed5074a7d456640e7ba9a8c8e68a831837b4e7bfd9f29e5700a4/st_theme-1.2.3-py3-none-any.whl", hash = "sha256:0a54d9817dd5f8a6d7b0d071b25ae72eacf536c63a5fb97374923938021b1389", size = 75205 },
+]
+
+[[package]]
 name = "streamlit"
 version = "1.42.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1554,6 +1568,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0e/61/a59da06a2822b265fc6230650a1ec4b9203da76ee9cf023083752debf9fa/streamlit-1.42.0.tar.gz", hash = "sha256:8c48494ccfad33e7d0bc5873151800b203cb71203bfd42bc7418940710ca4970", size = 9169261 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ad/dc/69068179e09488d0833a970d06e8bf40e35669a7bddb8a3caadc13b7dff4/streamlit-1.42.0-py2.py3-none-any.whl", hash = "sha256:edf333fd3525b7c64b19e1156b483a1a93cbdb09a3a06f26478388d68f971090", size = 9560180 },
+]
+
+[[package]]
+name = "streamlit-navigation-bar"
+version = "3.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "st-theme" },
+    { name = "streamlit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/33/f5/5f950940d4e729bfb441245ca1a979be6a2feb862162af07c799575fc4d1/streamlit-navigation-bar-3.3.0.tar.gz", hash = "sha256:f458c3f9bbb72a3fa07a28c1db98eceabdd49b19f71fafb44dc36042e0d4b4c4", size = 83477 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/34/2f/44010a5393faf2c6f5506096f3cff6bc618bc010f412a56c30a99398f52c/streamlit_navigation_bar-3.3.0-py3-none-any.whl", hash = "sha256:25be9657d7f44c0d4f2759a12bd75de7bb0829ed1dc69d9a5e91a77bc69924d8", size = 84888 },
 ]
 
 [[package]]
