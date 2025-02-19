@@ -299,10 +299,14 @@ def app():
             background-color: rgba(98, 0, 238, 0.2);
         }
         .rule-item {
-            margin-left: 20px;
             padding: 3px 5px;
             font-size: 0.9em;
             color: rgba(255, 255, 255, 0.8);
+            transition: background-color 0.2s;
+            border-radius: 4px;
+        }
+        .rule-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
         }
         .folder-icon {
             color: #87CEEB;
@@ -312,26 +316,47 @@ def app():
             color: #B0C4DE;
             margin-right: 5px;
         }
+        .folder-line {
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            margin-left: 10px;
+        }
         </style>
         """, unsafe_allow_html=True)
 
         st.markdown("### 📁 Folders")
 
-        # New folder creation with button
+        # Parent folder selection for new folders
         col1, col2 = st.columns([3, 1])
         with col1:
-            new_folder_name = st.text_input("📝 New Folder", key="new_folder_input", value=st.session_state.new_folder_name)
+            parent_folder = st.selectbox(
+                "Parent Folder",
+                options=["/"] + sorted([f for f in folders.keys() if f != "/"]),
+                key="parent_folder_select"
+            )
+            new_folder_name = st.text_input(
+                "📝 New Folder",
+                key="new_folder_input",
+                value=st.session_state.new_folder_name
+            )
         with col2:
             if st.button("Create", key="create_folder_btn"):
                 if new_folder_name and new_folder_name.strip():
                     try:
-                        if not db_connector.folder_exists(new_folder_name):
+                        # Create full folder path
+                        full_folder_path = (
+                            f"{parent_folder}/{new_folder_name}"
+                            if parent_folder != "/"
+                            else new_folder_name
+                        )
+
+                        if not db_connector.folder_exists(full_folder_path):
                             db_connector.create_folder({
-                                "name": new_folder_name,
-                                "description": f"Created on {datetime.utcnow()}"
+                                "name": full_folder_path,
+                                "description": f"Created on {datetime.utcnow()}",
+                                "parent_folder": parent_folder
                             })
-                            st.session_state.expanded_folders[new_folder_name] = True
-                            st.success(f"📁 Folder '{new_folder_name}' created!")
+                            st.session_state.expanded_folders[full_folder_path] = True
+                            st.success(f"📁 Folder '{full_folder_path}' created!")
                             st.session_state.new_folder_name = ""
                             st.rerun()
                         else:
@@ -381,18 +406,23 @@ def app():
                 for rule in rules_in_folder:
                     st.markdown(
                         f"""
-                        <div class="rule-item">
+                        <div class="rule-item" style="margin-left: {(level + 1) * 20}px">
                             <span class="rule-icon">📄</span> {rule.name}
                         </div>
                         """,
                         unsafe_allow_html=True
                     )
 
+                # Display child folders
+                child_folders = [f for f in all_folders if f != "/" and f.startswith(folder + "/")]
+                for child in sorted(child_folders):
+                    render_folder(child, level + 1)
+
         # Render root folder first
         render_folder("/")
 
-        # Render all other folders
-        for folder in [f for f in all_folders if f != "/"]:
+        # Render all other top-level folders (folders without parents)
+        for folder in [f for f in all_folders if f != "/" and "/" not in f[1:]]:
             render_folder(folder, level=1)
 
     # Display Rules in Current Folder
