@@ -141,6 +141,12 @@ def main():
             background-color: rgba(255, 255, 255, 0.08);
         }
 
+        /* Main Content Container */
+        .material-content {
+            margin-top: 88px;
+            padding: 24px;
+        }
+
         /* Streamlit Overrides */
         .stButton button {
             background-color: var(--md-sys-color-primary);
