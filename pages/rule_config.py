@@ -254,11 +254,19 @@ def app():
                     if editing_rule:
                         rule_config["id"] = rule_id
                         db_connector.update_rule(rule_config)
+                        # Generate and show SQL preview
+                        preview_sql = get_preview_sql(rule_config)
                         st.success("Rule updated successfully!")
+                        with st.expander("View Effective SQL", expanded=True):
+                            st.code(preview_sql, language="sql")
                         st.session_state.editing_rule = None
                     else:
                         db_connector.save_rule(rule_config)
+                        # Generate and show SQL preview
+                        preview_sql = get_preview_sql(rule_config)
                         st.success("Rule created successfully!")
+                        with st.expander("View Effective SQL", expanded=True):
+                            st.code(preview_sql, language="sql")
 
                     st.session_state.form_key += 1
                     st.rerun()
