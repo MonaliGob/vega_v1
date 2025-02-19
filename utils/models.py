@@ -6,7 +6,6 @@ from datetime import datetime
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 
-# Update engine configuration with proper SSL settings
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,  # Enable connection health checks
@@ -75,14 +74,11 @@ class Result(Base):
     error = Column(String, nullable=True)
     executed_at = Column(DateTime, default=datetime.utcnow)
 
-# Create tables
 def init_db():
     try:
-        # Create all tables
         Base.metadata.create_all(bind=engine)
         print("Database tables created successfully")
 
-        # Create and populate sample table if it doesn't exist
         with engine.connect() as conn:
             conn.execute(text("""
                 DROP TABLE IF EXISTS sample_table;
@@ -94,7 +90,6 @@ def init_db():
                 );
             """))
 
-            # Populate with sample data
             conn.execute(text("""
                 INSERT INTO sample_table (numeric_value, category, measurement)
                 SELECT 
@@ -106,7 +101,6 @@ def init_db():
             conn.commit()
             print("Sample table created and populated successfully")
 
-            # Create a default database connection if none exists
             result = conn.execute(text("SELECT COUNT(*) FROM database_connections")).scalar()
             if result == 0:
                 conn.execute(text("""

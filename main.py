@@ -9,10 +9,8 @@ def main():
         initial_sidebar_state="collapsed"
     )
 
-    # Material Design inspired CSS
     st.markdown("""
         <style>
-        /* Base Theme */
         :root {
             --md-sys-color-primary: #6200ee;
             --md-sys-color-surface: #1e1e1e;
@@ -24,12 +22,10 @@ def main():
             --md-sys-color-surface-variant: #373737;
         }
 
-        /* Global Styles */
         .stApp {
             background-color: var(--md-sys-color-background);
         }
 
-        /* Logo Container */
         .logo-container {
             display: flex;
             justify-content: center;
@@ -42,7 +38,6 @@ def main():
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        /* Material Design Components */
         .md-card {
             background-color: var(--md-sys-color-surface);
             border-radius: 12px;
@@ -56,7 +51,6 @@ def main():
             box-shadow: 0 4px 8px 0 rgba(0,0,0,0.3);
         }
 
-        /* Material Design Navigation */
         .material-navbar {
             position: fixed;
             top: 0;
@@ -122,7 +116,6 @@ def main():
             background-color: rgba(255, 255, 255, 0.08);
         }
 
-        /* Main Content Container */
         .material-content {
             margin-top: 88px;
             padding: 24px;
@@ -131,7 +124,6 @@ def main():
             margin-right: auto;
         }
 
-        /* Typography */
         h1, h2, h3 {
             color: var(--md-sys-color-on-background);
             font-family: 'Roboto', sans-serif;
@@ -140,7 +132,6 @@ def main():
             margin-bottom: 16px;
         }
 
-        /* Custom Components */
         .stat-card {
             background-color: var(--md-sys-color-surface-variant);
             border-radius: 8px;
@@ -160,7 +151,6 @@ def main():
             margin-top: 4px;
         }
 
-        /* Streamlit Overrides */
         .stButton button {
             background-color: var(--md-sys-color-primary);
             color: var(--md-sys-color-on-primary);
@@ -182,7 +172,6 @@ def main():
     if not check_password():
         return
 
-    # Material Design Navigation Bar
     st.markdown("""
         <div class="material-navbar">
             <div class="material-nav-content">
@@ -199,20 +188,16 @@ def main():
         </div>
     """, unsafe_allow_html=True)
 
-    # Content wrapper with Material Design spacing
     st.markdown('<div class="material-content">', unsafe_allow_html=True)
 
-    # Logo Section
     with st.container():
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             st.image("attached_assets/image_1739823857967.png", use_container_width=True)
 
-    # Overview Section
     st.markdown('<div class="md-card">', unsafe_allow_html=True)
     st.header("System Overview")
 
-    # Stats Row
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -240,7 +225,6 @@ def main():
         """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Features Section
     col1, col2 = st.columns(2)
 
     with col1:

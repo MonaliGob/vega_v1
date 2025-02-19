@@ -70,7 +70,6 @@ class DatabaseConnector:
     def test_connection(self, connection_data: Dict) -> bool:
         """Test a database connection"""
         try:
-            # If ID is provided, get connection details from database
             if "id" in connection_data:
                 connection = self.db.query(DatabaseConnection).filter(
                     DatabaseConnection.id == connection_data["id"]
@@ -87,7 +86,6 @@ class DatabaseConnector:
                     "ssl_mode": connection.ssl_mode
                 }
 
-            # Create connection string based on database type
             if connection_data["connection_type"] == "postgresql":
                 conn_str = (
                     f"postgresql://{connection_data['username']}:{connection_data['password']}"
@@ -95,7 +93,6 @@ class DatabaseConnector:
                     f"/{connection_data['database']}"
                 )
 
-                # Create test engine
                 test_engine = create_engine(
                     conn_str,
                     connect_args={
@@ -104,11 +101,9 @@ class DatabaseConnector:
                     }
                 )
 
-                # Test connection
                 with test_engine.connect() as conn:
                     conn.execute(text("SELECT 1"))
 
-                # Update last_connected_at if this is an existing connection
                 if "id" in connection_data:
                     connection.last_connected_at = datetime.utcnow()
                     self.db.commit()
@@ -123,7 +118,6 @@ class DatabaseConnector:
     def get_available_tables(self, connection_id: int) -> List[str]:
         """Get available tables for a specific database connection"""
         try:
-            # Ensure sample table exists first
             self._ensure_sample_table_exists()
 
             connection = self.db.query(DatabaseConnection).filter(
@@ -161,15 +155,14 @@ class DatabaseConnector:
             return []
 
     def _ensure_sample_table_exists(self):
+        """Ensure sample table exists and is populated"""
         try:
             with self.engine.connect() as conn:
-                # Check if table exists
                 result = conn.execute(text(
                     "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'sample_table')"
                 )).scalar()
 
                 if not result:
-                    # Create and populate sample table
                     conn.execute(text("""
                         CREATE TABLE IF NOT EXISTS sample_table (
                             id SERIAL PRIMARY KEY,
@@ -195,7 +188,6 @@ class DatabaseConnector:
     def get_column_names(self, connection_id: int, table_name: str) -> List[str]:
         """Get column names for a specific table in a database connection"""
         try:
-            # First ensure we have a valid connection
             connection = self.db.query(DatabaseConnection).filter(
                 DatabaseConnection.id == connection_id
             ).first()
@@ -209,7 +201,6 @@ class DatabaseConnector:
                 return []
 
             if connection.connection_type == "postgresql":
-                # Create connection string
                 conn = psycopg2.connect(
                     host=connection.host,
                     port=connection.port,
@@ -221,24 +212,6 @@ class DatabaseConnector:
 
                 try:
                     cursor = conn.cursor()
-
-                    # First check if table exists
-                    cursor.execute("""
-                        SELECT EXISTS (
-                            SELECT 1 
-                            FROM information_schema.tables 
-                            WHERE table_schema = 'public' 
-                            AND table_name = %s
-                        );
-                    """, (table_name,))
-
-                    table_exists = cursor.fetchone()[0]
-
-                    if not table_exists:
-                        print(f"Table {table_name} does not exist")
-                        return []
-
-                    # Get column names
                     cursor.execute("""
                         SELECT column_name 
                         FROM information_schema.columns 
@@ -248,7 +221,6 @@ class DatabaseConnector:
                     """, (table_name,))
 
                     columns = [row[0] for row in cursor.fetchall()]
-                    print(f"Found columns for {table_name}: {columns}")
                     return columns
 
                 finally:
@@ -261,6 +233,7 @@ class DatabaseConnector:
             return []
 
     def get_rules(self) -> List[Rule]:
+        """Get all rules"""
         return self.db.query(Rule).all()
 
     def rule_name_exists(self, name: str) -> bool:
@@ -268,7 +241,7 @@ class DatabaseConnector:
         return self.db.query(Rule).filter(Rule.name == name).first() is not None
 
     def save_rule(self, rule_data: Dict) -> Rule:
-        # Check if rule name already exists
+        """Save a new rule"""
         if self.rule_name_exists(rule_data["name"]):
             raise ValueError(f"A rule with name '{rule_data['name']}' already exists")
 
@@ -289,6 +262,7 @@ class DatabaseConnector:
         return rule
 
     def update_rule(self, rule_data: Dict) -> Rule:
+        """Update an existing rule"""
         rule = self.db.query(Rule).filter(Rule.id == rule_data["id"]).first()
         if rule:
             rule.name = rule_data["name"]
@@ -305,9 +279,11 @@ class DatabaseConnector:
         return rule
 
     def get_results(self) -> List[Result]:
+        """Get all results"""
         return self.db.query(Result).all()
 
     def save_result(self, result_data: Dict) -> Result:
+        """Save a new result"""
         result = Result(
             rule_id=int(result_data["rule_id"]),
             status=str(result_data["status"]),
@@ -320,6 +296,7 @@ class DatabaseConnector:
         return result
 
     def get_sample_data(self, conn_type: str, query: str, limit: int = 100) -> pd.DataFrame:
+        """Get sample data from database"""
         try:
             self._ensure_sample_table_exists()
 
@@ -341,38 +318,6 @@ class DatabaseConnector:
         except Exception as e:
             print(f"Error fetching data: {str(e)}")
             return pd.DataFrame()
-
-    def _ensure_sample_table_exists(self):
-        try:
-            with self.engine.connect() as conn:
-                # Check if table exists
-                result = conn.execute(text(
-                    "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'sample_table')"
-                )).scalar()
-
-                if not result:
-                    # Create and populate sample table
-                    conn.execute(text("""
-                        CREATE TABLE IF NOT EXISTS sample_table (
-                            id SERIAL PRIMARY KEY,
-                            numeric_value INTEGER,
-                            category VARCHAR(50),
-                            measurement FLOAT
-                        )
-                    """))
-
-                    conn.execute(text("""
-                        INSERT INTO sample_table (numeric_value, category, measurement)
-                        SELECT 
-                            floor(random() * 100 + 1)::int,
-                            'Category ' || (floor(random() * 5 + 1)::int)::text,
-                            random() * 100
-                        FROM generate_series(1, 1000)
-                    """))
-                    conn.commit()
-                    print("Sample table created and populated successfully")
-        except Exception as e:
-            print(f"Error ensuring sample table exists: {str(e)}")
 
     def get_folders(self) -> List[Folder]:
         """Get all folders"""
@@ -400,14 +345,12 @@ class DatabaseConnector:
 
     def get_folder_structure(self) -> Dict[str, List]:
         """Get folder structure with rules"""
-        folders = {"/": []}  # Initialize with root folder
+        folders = {"/": []}
 
-        # Add all folders from database
         db_folders = self.get_folders()
         for folder in db_folders:
             folders[folder.name] = []
 
-        # Add rules to their respective folders
         rules = self.get_rules()
         for rule in rules:
             folder = rule.folder if rule.folder in folders else "/"
