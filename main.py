@@ -56,6 +56,81 @@ def main():
             box-shadow: 0 4px 8px 0 rgba(0,0,0,0.3);
         }
 
+        /* Material Design Navigation */
+        .material-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            background-color: var(--md-sys-color-surface);
+            padding: 0;
+            z-index: 1000;
+            box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 
+                       0px 4px 5px 0px rgba(0,0,0,0.14), 
+                       0px 1px 10px 0px rgba(0,0,0,0.12);
+        }
+
+        .material-nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 8px 24px;
+            height: 64px;
+            box-sizing: border-box;
+        }
+
+        .material-nav-brand {
+            display: flex;
+            align-items: center;
+            min-width: 200px;
+        }
+
+        .material-nav-logo {
+            height: 40px;
+            width: auto;
+        }
+
+        .material-nav-links {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            gap: 32px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .material-nav-link {
+            color: var(--md-sys-color-on-primary);
+            text-decoration: none;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.1px;
+            text-transform: uppercase;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .material-nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Main Content Container */
+        .material-content {
+            margin-top: 88px;
+            padding: 24px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
         /* Typography */
         h1, h2, h3 {
             color: var(--md-sys-color-on-background);
@@ -85,68 +160,6 @@ def main():
             margin-top: 4px;
         }
 
-        /* Material Design Navigation */
-        .material-navbar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: var(--md-sys-color-surface);
-            padding: 8px 16px;
-            z-index: 1000;
-            box-shadow: 0px 2px 4px -1px rgba(0,0,0,0.2), 
-                       0px 4px 5px 0px rgba(0,0,0,0.14), 
-                       0px 1px 10px 0px rgba(0,0,0,0.12);
-        }
-
-        .material-nav-content {
-            display: flex;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-            height: 64px;
-        }
-
-        .material-nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .material-nav-logo {
-            height: 40px;
-        }
-
-        .material-nav-links {
-            display: flex;
-            align-items: center;
-            margin-left: 48px;
-            gap: 24px;
-        }
-
-        .material-nav-link {
-            color: var(--md-sys-color-on-primary);
-            text-decoration: none;
-            font-family: 'Roboto', sans-serif;
-            font-size: 14px;
-            font-weight: 500;
-            letter-spacing: 0.1px;
-            text-transform: uppercase;
-            padding: 8px 16px;
-            border-radius: 4px;
-            transition: background-color 0.2s ease;
-        }
-
-        .material-nav-link:hover {
-            background-color: rgba(255, 255, 255, 0.08);
-        }
-
-        /* Main Content Container */
-        .material-content {
-            margin-top: 88px;
-            padding: 24px;
-        }
-
         /* Streamlit Overrides */
         .stButton button {
             background-color: var(--md-sys-color-primary);
@@ -174,14 +187,14 @@ def main():
         <div class="material-navbar">
             <div class="material-nav-content">
                 <div class="material-nav-brand">
-                    <img src="attached_assets/image_1739823857967.png" class="material-nav-logo">
+                    <img src="attached_assets/image_1739823857967.png" alt="VEGA" class="material-nav-logo">
                 </div>
-                <div class="material-nav-links">
+                <nav class="material-nav-links">
                     <a href="/" class="material-nav-link">📊 Main</a>
                     <a href="/pages/execute_rules" class="material-nav-link">🎯 Execute Rules</a>
                     <a href="/pages/rule_config" class="material-nav-link">⚙️ Rules</a>
                     <a href="/pages/results" class="material-nav-link">📈 Results</a>
-                </div>
+                </nav>
             </div>
         </div>
     """, unsafe_allow_html=True)
