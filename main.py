@@ -33,16 +33,13 @@ def main():
         .logo-container {
             display: flex;
             justify-content: center;
-            margin: 2rem 0;
-            padding: 1rem;
+            align-items: center;
+            margin: 2rem auto;
+            padding: 2rem;
+            max-width: 300px;
             background: var(--md-sys-color-surface);
             border-radius: 16px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .logo-container img {
-            max-width: 240px;
-            height: auto;
         }
 
         /* Material Design Components */
@@ -110,12 +107,11 @@ def main():
     if not check_password():
         return
 
-    # Logo
-    st.markdown("""
-        <div class="logo-container">
-            <img src="assets/vega_logo.svg" alt="VEGA Logo">
-        </div>
-    """, unsafe_allow_html=True)
+    # Logo Section
+    with st.container():
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.image("assets/vega_logo.svg", use_column_width=True)
 
     # Overview Section
     st.markdown('<div class="md-card">', unsafe_allow_html=True)
