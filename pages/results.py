@@ -158,162 +158,125 @@ def app():
         return
 
     # Create results DataFrame
-    results_data = []
-    for result in results:
-        rule = next((r for r in rules if r.id == result.rule_id), None)
-        if rule:
-            results_data.append({
-                'rule_id': rule.id,
-                'rule_name': rule.name,
-                'rule_type': rule.type,
-                'status': result.status,
-                'score': result.score,
-                'error': result.error,
-                'executed_at': result.executed_at,
-                'table': rule.table,
-                'column': rule.column
-            })
-
-    results_df = pd.DataFrame(results_data)
-    results_df = results_df.sort_values('executed_at', ascending=False)
+    results_df = pd.DataFrame([{
+        'rule_id': result.rule_id,
+        'rule_name': next((r.name for r in rules if r.id == result.rule_id), None),
+        'rule_type': next((r.type for r in rules if r.id == result.rule_id), None),
+        'status': result.status,
+        'score': result.score,
+        'error': result.error,
+        'executed_at': result.executed_at
+    } for result in results])
 
     # Multi-select rules for analysis
     st.markdown('<div class="material-card">', unsafe_allow_html=True)
     selected_rule_names = st.multiselect(
         "Select Rules to Analyze",
-        options=sorted([rule.name for rule in rules]),
-        default=sorted([rule.name for rule in rules])[:3]
+        options=sorted(results_df['rule_name'].unique()),
+        default=sorted(results_df['rule_name'].unique())[:3]
     )
 
     if selected_rule_names:
+        # Filter and get latest results
         latest_results = (results_df[results_df['rule_name'].isin(selected_rule_names)]
                          .sort_values('executed_at')
                          .groupby('rule_name')
                          .last()
                          .reset_index())
 
-        if not latest_results.empty:
-            # Combined statistics in PowerBI style
-            col1, col2 = st.columns(2)
+        # Display results in Material Design cards
+        col1, col2 = st.columns(2)
 
-            with col1:
-                pass_threshold = 95
-                pass_count = sum(latest_results['score'] >= pass_threshold)
-                fail_count = len(latest_results) - pass_count
+        with col1:
+            # Pie chart for pass/fail distribution
+            pass_threshold = 95
+            pass_count = sum(latest_results['score'] >= pass_threshold)
+            fail_count = len(latest_results) - pass_count
 
-                pie_data = pd.DataFrame([
+            fig_pie = px.pie(
+                pd.DataFrame([
                     {'status': 'Passing', 'count': pass_count},
                     {'status': 'Failing', 'count': fail_count}
-                ])
-
-                fig_pie = px.pie(
-                    pie_data,
-                    values='count',
-                    names='status',
-                    title=f"Rules Pass/Fail Distribution (Threshold: {pass_threshold}%)",
-                    color='status',
-                    color_discrete_map={'Passing': '#00B8D4', 'Failing': '#FF5252'},
-                    template="plotly_dark"
-                )
-                fig_pie.update_layout(
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    margin=dict(t=30, b=0, l=0, r=0)
-                )
-                st.plotly_chart(fig_pie, use_container_width=True)
-
-            with col2:
-                fig_trend = go.Figure()
-                for rule_name in selected_rule_names:
-                    rule_data = results_df[results_df['rule_name'] == rule_name]
-                    fig_trend.add_trace(go.Scatter(
-                        x=rule_data['executed_at'],
-                        y=rule_data['score'],
-                        name=rule_name,
-                        mode='lines+markers',
-                        line=dict(width=2),
-                        marker=dict(size=8)
-                    ))
-
-                fig_trend.update_layout(
-                    title="Score History for Selected Rules",
-                    xaxis_title="Execution Time",
-                    yaxis_title="Score (%)",
-                    hovermode="x unified",
-                    template="plotly_dark",
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    margin=dict(t=30, b=0, l=0, r=0)
-                )
-                fig_trend.add_hline(y=95, line_dash="dash", line_color="#FF5252",
-                                      annotation_text="Threshold (95%)")
-                st.plotly_chart(fig_trend, use_container_width=True)
-
-            # Summary metrics
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                avg_score = latest_results['score'].mean()
-                st.metric("Average Score", f"{avg_score:.1f}%")
-            with col2:
-                pass_percentage = (pass_count / len(selected_rule_names)) * 100
-                st.metric("Rules Passing", f"{pass_count}/{len(selected_rule_names)} ({pass_percentage:.1f}%)")
-            with col3:
-                total_checks = len(results_df[results_df['rule_name'].isin(selected_rule_names)])
-                st.metric("Total Checks", total_checks)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    # Individual rule details
-    for rule in rules:
-        rule_results = results_df[results_df['rule_id'] == rule.id]
-        if not rule_results.empty:
-            latest_score = rule_results.iloc[0]['score']
-            status = "✅" if latest_score >= 95 else "❌"
-
-            st.markdown(f'<div class="material-card">', unsafe_allow_html=True)
-            st.markdown(f"### Rule: {rule.name} {status} (Latest Score: {latest_score:.1f}%)")
-
-            # Rule information
-            st.markdown(f"""
-            **Rule Details:**
-            - Type: {rule.type}
-            - Table: {rule.table}
-            - Column: {rule.column}
-            - Latest Check: {rule_results.iloc[0]['executed_at'].strftime('%Y-%m-%d %H:%M:%S')}
-            """)
-
-            # Line chart
-            fig = px.line(
-                rule_results,
-                x='executed_at',
-                y='score',
-                title=f"Score History for {rule.name}",
-                markers=True,
+                ]),
+                values='count',
+                names='status',
+                title=f"Rules Pass/Fail Distribution (Threshold: {pass_threshold}%)",
+                color='status',
+                color_discrete_map={'Passing': '#00B8D4', 'Failing': '#FF5252'},
                 template="plotly_dark"
             )
-            fig.update_layout(
+            fig_pie.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 margin=dict(t=30, b=0, l=0, r=0)
             )
-            fig.add_hline(y=rule.threshold, line_dash="dash", line_color="#FF5252",
-                           annotation_text=f"Threshold ({rule.threshold}%)")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig_pie, use_container_width=True)
 
-            # Results table
-            st.dataframe(
-                rule_results[['executed_at', 'score', 'status', 'error']]
-                .rename(columns={
-                    'executed_at': 'Execution Time',
-                    'score': 'Score (%)',
-                    'status': 'Status',
-                    'error': 'Error'
-                }),
-                hide_index=True
+        with col2:
+            # Score history line chart
+            fig_trend = go.Figure()
+            for rule_name in selected_rule_names:
+                rule_data = results_df[results_df['rule_name'] == rule_name]
+                fig_trend.add_trace(go.Scatter(
+                    x=rule_data['executed_at'],
+                    y=rule_data['score'],
+                    name=rule_name,
+                    mode='lines+markers'
+                ))
+
+            fig_trend.update_layout(
+                title="Score History for Selected Rules",
+                xaxis_title="Execution Time",
+                yaxis_title="Score (%)",
+                template="plotly_dark",
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                margin=dict(t=30, b=0, l=0, r=0)
             )
-            st.markdown('</div>', unsafe_allow_html=True)
+            fig_trend.add_hline(y=95, line_dash="dash", line_color="#FF5252",
+                               annotation_text="Threshold (95%)")
+            st.plotly_chart(fig_trend, use_container_width=True)
 
-    st.markdown('</div>', unsafe_allow_html=True) # closing content-container
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Display individual rule details in Material cards
+    for rule_name in selected_rule_names:
+        rule_data = results_df[results_df['rule_name'] == rule_name].sort_values('executed_at', ascending=False)
+        latest_score = rule_data.iloc[0]['score']
+        status = "✅" if latest_score >= 95 else "❌"
+
+        st.markdown('<div class="material-card">', unsafe_allow_html=True)
+        st.markdown(f"### {rule_name} {status}")
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Latest Score", f"{latest_score:.1f}%")
+        with col2:
+            st.metric("Last Check", rule_data.iloc[0]['executed_at'].strftime('%Y-%m-%d %H:%M'))
+        with col3:
+            trend = rule_data['score'].diff().mean()
+            st.metric("Trend", f"{trend:.1f}%", delta=trend)
+
+        # Score history chart
+        fig = px.line(
+            rule_data,
+            x='executed_at',
+            y='score',
+            title=f"Score History",
+            template="plotly_dark"
+        )
+        fig.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(t=30, b=0, l=0, r=0)
+        )
+        fig.add_hline(y=95, line_dash="dash", line_color="#FF5252",
+                     annotation_text="Threshold (95%)")
+        st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     app()

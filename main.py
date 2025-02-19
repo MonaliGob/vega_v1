@@ -9,8 +9,10 @@ def main():
         initial_sidebar_state="collapsed"
     )
 
+    # Material Design inspired CSS
     st.markdown("""
         <style>
+        /* Material Design Colors and Base Styles */
         :root {
             --primary: #6200ee;
             --primary-variant: #3700b3;
@@ -20,9 +22,12 @@ def main():
             --error: #cf6679;
             --white: #ffffff;
         }
+
         .stApp {
             background-color: var(--background);
         }
+
+        /* Material Design Navigation */
         .material-navbar {
             position: fixed;
             top: 0;
@@ -35,6 +40,7 @@ def main():
                        0px 4px 5px 0px rgba(0,0,0,0.14), 
                        0px 1px 10px 0px rgba(0,0,0,0.12);
         }
+
         .material-nav-content {
             display: flex;
             align-items: center;
@@ -42,20 +48,24 @@ def main():
             margin: 0 auto;
             height: 64px;
         }
+
         .material-nav-brand {
             display: flex;
             align-items: center;
             gap: 16px;
         }
+
         .material-nav-logo {
             height: 40px;
         }
+
         .material-nav-links {
             display: flex;
             align-items: center;
             margin-left: 48px;
             gap: 24px;
         }
+
         .material-nav-link {
             color: var(--white);
             text-decoration: none;
@@ -68,9 +78,12 @@ def main():
             border-radius: 4px;
             transition: background-color 0.2s ease;
         }
+
         .material-nav-link:hover {
             background-color: rgba(255, 255, 255, 0.08);
         }
+
+        /* Material Design Cards */
         .material-card {
             background-color: var(--surface);
             border-radius: 8px;
@@ -80,26 +93,33 @@ def main():
                        0px 1px 1px 0px rgba(0,0,0,0.14),
                        0px 1px 3px 0px rgba(0,0,0,0.12);
         }
+
         .material-content {
             margin-top: 88px;
             padding: 24px;
         }
+
+        /* Material Design Typography */
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Roboto', sans-serif;
             color: var(--white);
             margin-bottom: 16px;
         }
+
         p {
             font-family: 'Roboto', sans-serif;
             color: rgba(255, 255, 255, 0.87);
             line-height: 1.5;
         }
+
+        /* Material Design Metrics */
         .metric-label {
             font-family: 'Roboto', sans-serif;
             font-size: 14px;
             font-weight: 500;
             color: rgba(255, 255, 255, 0.6);
         }
+
         .metric-value {
             font-family: 'Roboto', sans-serif;
             font-size: 34px;
@@ -112,6 +132,7 @@ def main():
     if not check_password():
         return
 
+    # Material Design Navigation Bar
     st.markdown("""
         <div class="material-navbar">
             <div class="material-nav-content">
