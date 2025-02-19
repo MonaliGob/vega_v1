@@ -14,9 +14,12 @@ def main():
     if not check_password():
         return
 
+    # Define navigation items
     pages = ["Main", "Execute Rules", "Rules", "Results"]
     parent_dir = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(parent_dir, "assets/vega_logo.svg")
+
+    # Navigation bar styling
     styles = {
         "nav": {
             "background-color": "#6200ee",
@@ -24,7 +27,12 @@ def main():
             "display": "flex",
             "align-items": "center",
             "padding": "0 24px",
-            "width": "100%"
+            "width": "100vw",
+            "position": "fixed",
+            "top": "0",
+            "left": "0",
+            "z-index": "999",
+            "height": "64px"
         },
         "img": {
             "padding-right": "14px",
@@ -34,7 +42,9 @@ def main():
         "span": {
             "color": "white",
             "padding": "14px",
-            "display": "inline-block"
+            "display": "inline-block",
+            "font-family": "sans-serif",
+            "font-size": "14px"
         },
         "active": {
             "background-color": "rgba(255, 255, 255, 0.1)",
@@ -44,18 +54,48 @@ def main():
             "border-radius": "4px"
         }
     }
+
+    # Navigation options
     options = {
         "show_menu": False,
         "show_sidebar": False,
         "hide_nav": True
     }
 
+    # Add page routes
+    urls = {
+        "Main": "/",
+        "Execute Rules": "/pages/execute_rules",
+        "Rules": "/pages/rule_config",
+        "Results": "/pages/results"
+    }
+
+    # Initialize navigation
     page = st_navbar(
         pages,
         logo_path=logo_path,
+        urls=urls,
         styles=styles,
         options=options,
     )
+
+    # Add padding and ensure navigation visibility
+    st.markdown("""
+        <style>
+        .main {
+            padding-top: 80px !important;
+        }
+        .stApp {
+            margin-top: 64px !important;
+        }
+        div[data-testid="stToolbar"] {
+            display: none;
+        }
+        header[data-testid="stHeader"] {
+            display: none;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     # Logo Section
     with st.container():
