@@ -53,7 +53,7 @@ def app():
     # Initialize database connector
     db_connector = DatabaseConnector()
 
-    # Get existing rules and folder structure
+    # Get existing rules for editing
     rules = db_connector.get_rules()
     folders = get_folder_structure(rules)
 
@@ -277,44 +277,50 @@ def app():
             st.session_state.form_key += 1
             st.rerun()
 
-    # Sidebar with folder tree
+    # Sidebar with Windows Explorer-like folder tree
     with st.sidebar:
         st.markdown("""
-            <style>
-            .folder-tree {
-                margin-left: 10px;
-                border-left: 1px solid rgba(255, 255, 255, 0.1);
-                padding-left: 10px;
-            }
-            .folder-item {
-                padding: 8px;
-                cursor: pointer;
-                border-radius: 4px;
-                transition: background-color 0.2s;
-            }
-            .folder-item:hover {
-                background-color: rgba(255, 255, 255, 0.1);
-            }
-            .rule-item {
-                padding: 6px;
-                margin-left: 20px;
-                font-size: 0.9em;
-                color: rgba(255, 255, 255, 0.8);
-                border-radius: 4px;
-                transition: background-color 0.2s;
-            }
-            .rule-item:hover {
-                background-color: rgba(255, 255, 255, 0.05);
-            }
-            .folder-icon {
-                color: #87CEEB;
-                margin-right: 5px;
-            }
-            .rule-icon {
-                color: #B0C4DE;
-                margin-right: 5px;
-            }
-            </style>
+        <style>
+        .folder-tree {
+            margin-left: 10px;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding-left: 10px;
+        }
+        .folder-item {
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        .folder-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .folder-selected {
+            background-color: rgba(98, 0, 238, 0.2);
+        }
+        .rule-item {
+            padding: 3px 5px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.8);
+            transition: background-color 0.2s;
+            border-radius: 4px;
+        }
+        .rule-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .folder-icon {
+            color: #87CEEB;
+            margin-right: 5px;
+        }
+        .rule-icon {
+            color: #B0C4DE;
+            margin-right: 5px;
+        }
+        .folder-line {
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            margin-left: 10px;
+        }
+        </style>
         """, unsafe_allow_html=True)
 
         st.markdown("### 📁 Folders")
@@ -336,6 +342,7 @@ def app():
             if st.button("Create", key="create_folder_btn"):
                 if new_folder_name and new_folder_name.strip():
                     try:
+                        # Create full folder path
                         full_folder_path = (
                             f"{parent_folder}/{new_folder_name}"
                             if parent_folder != "/"
@@ -359,60 +366,64 @@ def app():
                 else:
                     st.error("Please enter a folder name!")
 
-        def render_folder(folder: str, level: int = 0):
-            is_expanded = st.session_state.expanded_folders.get(folder, False)
+        # Display folder tree
+        all_folders = sorted(list(set(list(folders.keys()) + ["/"])))
 
-            # Folder header with expand/collapse button
+        def render_folder(folder, level=0):
+            is_current = folder == st.session_state.current_folder
+            folder_class = "folder-selected" if is_current else ""
+
+            # Count rules in folder
+            rules_in_folder = folders.get(folder, [])
+            rule_count = len(rules_in_folder)
+
+            # Create expandable section
+            is_expanded = st.session_state.expanded_folders.get(folder, False)
+            icon = "📂" if is_expanded else "📁"
+
+            # Add folder button with proper indentation
             col1, col2 = st.columns([8, 2])
             with col1:
-                st.markdown(
-                    f"""
-                    <div class="folder-item" style="margin-left: {level * 20}px">
-                        {'📂' if is_expanded else '📁'} {folder}
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                if st.button(
+                    f"{' ' * (level * 2)}{icon} {folder} ({rule_count})",
+                    key=f"folder_{folder}",
+                    help=f"Click to select folder: {folder}"
+                ):
+                    st.session_state.current_folder = folder
+                    st.rerun()
+
             with col2:
-                if st.button("👁️", key=f"expand_{folder}"):
+                if st.button(
+                    "👁️" if is_expanded else "👁️",
+                    key=f"expand_{folder}",
+                    help="Toggle folder view"
+                ):
                     st.session_state.expanded_folders[folder] = not is_expanded
                     st.rerun()
 
+            # Display rules if folder is expanded
             if is_expanded:
-                # Display rules in folder
-                rules_in_folder = folders.get(folder, [])
                 for rule in rules_in_folder:
-                    cols = st.columns([6, 2])
-                    with cols[0]:
-                        st.markdown(
-                            f"""
-                            <div class="rule-item" style="margin-left: {(level + 1) * 20}px">
-                                📄 {rule.name}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    with cols[1]:
-                        target_folder = st.selectbox(
-                            "Move to",
-                            options=[f for f in folders.keys()],
-                            key=f"move_rule_{rule.id}"
-                        )
-                        if st.button("Move", key=f"move_btn_{rule.id}"):
-                            db_connector.move_rule(rule.id, target_folder)
-                            st.rerun()
+                    st.markdown(
+                        f"""
+                        <div class="rule-item" style="margin-left: {(level + 1) * 20}px">
+                            <span class="rule-icon">📄</span> {rule.name}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
 
                 # Display child folders
-                child_folders = [f for f in folders.keys() if f != "/" and f.startswith(folder + "/")]
+                child_folders = [f for f in all_folders if f != "/" and f.startswith(folder + "/")]
                 for child in sorted(child_folders):
                     render_folder(child, level + 1)
 
-        # Render root folder
+        # Render root folder first
         render_folder("/")
 
-        # Render top-level folders
-        for folder in [f for f in folders.keys() if f != "/" and "/" not in f[1:]]:
-            render_folder(folder, 1)
+        # Render all other top-level folders (folders without parents)
+        for folder in [f for f in all_folders if f != "/" and "/" not in f[1:]]:
+            render_folder(folder, level=1)
 
     # Display Rules in Current Folder
     st.header(f"Rules in {st.session_state.current_folder}")
